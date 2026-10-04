@@ -1,0 +1,42 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+.egg-info/
+*.egg-info
+*.egg
+
+# Environments
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated / runtime artifacts
+upload/
+output/
+results.md
+test.md
+
+# Pytest
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Python packaging
+build/
+dist/
+*.egg-info

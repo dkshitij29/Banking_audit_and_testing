@@ -1,0 +1,35 @@
+[project]
+name = "finance-agent"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+dependencies = [
+    # Core
+    "pydantic-ai>=1.70.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "python-multipart",
+
+    # Data
+    "yfinance>=0.2",
+    "requests",
+
+    # SEC processing
+    "pdfplumber",
+    "beautifulsoup4",
+    "rank-bm25",
+
+    # Visualization
+    "matplotlib",
+    "jinja2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff"]
+openai = ["openai"]
+anthropic = ["anthropic"]
+
+[tool.setuptools.packages.find]
+include = ["agent*"]
