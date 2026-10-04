@@ -1,0 +1,599 @@
+# Where each engine clause ID (engine/clauses.py) appears in each real policy wording.
+#
+# One block per product_id (sampler/products/). `document` is a document_id in
+# corpus/manifest.csv. Every clause ID in the registry has an entry:
+#
+#   pages     printed page numbers of the PDF ("Page | 7")
+#   section   the wording's own section numbers
+#   text      the wording's words, quoted exactly (spelling as printed)
+#   modelled  what the engine and sampler do with it; `false` if the product has
+#             no such rule or no catalogue case can reach it
+#   reading   the interpretation taken, where the wording is open
+#   guards    sampler/ambiguity.py guards that discard any case whose answer the
+#             other reading would change, so no case depends on the choice
+#
+# The wording names conditions and bill items in words; the ICD-10 prefixes and
+# item codes the engine matches are this project's coding of those words, in
+# sampler/products/<product>.py, and tests/test_arogya_sanjeevani.py pins how
+# every catalogue condition comes out.
+
+AROGYA_SANJEEVANI_GCI:
+  document: arogya_sanjeevani_gci
+  profile: sampler/products/arogya_sanjeevani.py
+  notes: >-
+    The wording numbers its standard and specific exclusions 7.1-7.21 although
+    they sit in chapter 6 (Exclusions), and its general terms are chapter 7. Both
+    are cited here as printed, with the IRDAI exclusion code (Excl01-Excl18) that
+    is the same in every insurer's copy.
+  general:
+    sum_insured_options:
+      pages: [19]
+      section: "8 Table of Benefits (Sum insured)"
+      text: "On Individual basis – SI shall apply to each individual family member."
+      reading: >-
+        No amounts are listed; the schedule states them. The sampler uses common
+        Arogya Sanjeevani sums insured of Rs 1, 2, 3 and 5 lakh, and each case's
+        policy certificate states its own.
+    sum_insured_definition:
+      pages: [6]
+      section: "3.52 Sum Insured"
+      text: "Sum Insured means the pre-defined limit and Cumulative Bonus (if any) specified in the Policy Schedule"
+      reading: >-
+        Since Sum Insured includes the cumulative bonus, "2% of sum insured" could
+        count the bonus. The engine takes percentage limits on the base sum
+        insured, as policy schedules state them.
+      guards: [bonus_in_percentage_limits]
+    launch:
+      reading: >-
+        IRDAI made Arogya Sanjeevani available from 1 April 2020, so renewal
+        histories start no earlier (ProductProfile.launched). Earlier continuous
+        cover enters only as portability (7.I.4), which carries its waiting-period
+        credit.
+    entry_age:
+      pages: [19]
+      section: "8 Table of Benefits (Eligibility)"
+      modelled: false
+      reading: Members are taken as validly enrolled; entry-age rules never decide a claim here.
+    rendered_documents:
+      pages: [18]
+      section: "7.III.4 Documents to be submitted"
+      reading: >-
+        The wording lists 14 documents. The bundle renders three: claim form (i),
+        original bills with itemized break-up (iv) and discharge summary (vi).
+        The agent brief states that intake verified the rest (ID, KYC, bank
+        details, reports), so their absence is never a reason to escalate.
+
+  clauses:
+    2.1_min_hospitalisation:
+      pages: [3, 7, 19]
+      section: "3.19 Hospitalization; 4.1.1 Note 1; 8 Table of Benefits (Hospitalisation Expenses)"
+      text: "Expenses of Hospitalization for a minimum period of 24 consecutive hours only shall be admissible. However, the time limit shall not apply in respect of Day Care Treatment"
+      modelled: "min_stay_hours = 24; a stay of 24:00 or more qualifies."
+      reading: >-
+        3.22 defines inpatient care as a stay of "more than 24 hours", which
+        disagrees with "a minimum period of 24 consecutive hours" at exactly 24:00.
+      guards: [stay_of_exactly_the_minimum]
+    2.2_day_care:
+      pages: [2, 7, 19]
+      section: "3.12 Day care treatment; 4.1.1.iv; 8 Table of Benefits"
+      text: "undertaken under General or Local Anesthesia in a hospital/day care centre in less than 24 hrs because of technological advancement, and b. which would have otherwise required hospitalization of more than 24 hours. Treatment normally taken on an out-patient basis is not included in the scope of this definition."
+      modelled: >-
+        "All the day care treatments" (4.1.1.iv) with no list. day_care_procedures
+        lists the catalogue procedures that meet definition 3.12: surgery under
+        general, regional or local anaesthesia that would otherwise need a stay
+        of more than 24 hours.
+      reading: >-
+        Stays under 24 hours are sampled only for those procedures (payable) or
+        for medical admissions with no procedure at all (not payable), so no case
+        turns on a procedure whose day-care status is arguable. LASIK is not day
+        care (it never needed admission) and is excluded anyway (Excl15).
+    3.1_room_rent_limit:
+      pages: [5, 7, 20]
+      section: "4.1.i; 4.1.1 Notes 2 and 4; 3.40 Room Rent; 3.43 Associated Medical Expenses; 8 Table of Benefits"
+      text: "Room Rent, Boarding, Nursing Expenses as provided by the Hospital / Nursing Home up to 2% of the sum insured subject to maximum of Rs. 5000/-, per day"
+      modelled: >-
+        room_cap = min(2% of SI, Rs 5,000) per day. Nursing counts in the daily
+        room rate (room_rate_includes), as "Room Rent, Boarding, Nursing
+        Expenses" and "all inclusive" say. Above the cap, Note 2 scales "all other
+        expenses incurred at the Hospital, with the exception of cost of pharmacy,
+        consumables, implants, medical devices and diagnostics": surgeon,
+        anaesthetist, consultant, OT, other and administrative charges.
+      reading: >-
+        ICU charges have their own limit and are not scaled with the room;
+        pre/post-hospitalisation bills are not scaled either. Note 4 (no
+        deduction where the hospital does not bill by room category) is not
+        modelled: every hospital in the dataset bills by room category.
+      guards: [room_limit_with_icu_stay, room_limit_with_pre_post_bills, room_limit_on_ayush, bonus_in_percentage_limits]
+    3.2_icu_limit:
+      pages: [4, 7, 20]
+      section: "4.1.ii; 4.1.1 Note 3; 3.24 ICU Charges"
+      text: "Intensive Care Unit (ICU) / Intensive Cardiac Care Unit (ICCU) expenses up to 5% of sum insured subject to maximum of Rs, 10,000/- per day."
+      modelled: >-
+        icu_cap = min(5% of SI, Rs 10,000) per day. Note 3: "Proportionate
+        deductions is not applicable" above it, so only the ICU line is capped.
+        The ICU line includes critical care nursing (3.24).
+      guards: [room_limit_on_ayush, bonus_in_percentage_limits]
+    3.3_disease_sublimit:
+      pages: [7, 20]
+      section: "4.3 Cataract Treatment; 4.1.1.i"
+      text: "subject to a limit of 25% of Sum Insured or Rs. 40,000/-, whichever is lower, per each eye in one policy year"
+      modelled: "One sub-limit, cataract, per eye operated (Procedure.units). No earlier cataract claim in the same policy year is modelled."
+      reading: >-
+        Whether pre/post bills for the cataract count against the limit is open;
+        the engine counts them.
+      guards: [sublimit_with_pre_post, bonus_in_percentage_limits]
+    3.4_ayush:
+      pages: [1, 2, 7, 20]
+      section: "4.2 AYUSH Treatment; 3.3 AYUSH Treatment; 3.4 AYUSH Hospital"
+      text: "inpatient care treatment under Ayurveda, Yoga and Naturopathy, Unani, Siddha and Homeopathy systems of medicines during each Policy Year up to the limit of sum insured as specified in the policy schedule in any AYUSH Hospital"
+      modelled: "Covered up to the sum insured, only in an AYUSH hospital (definition 3.4); no AYUSH limit of its own."
+      reading: Whether the room and ICU limits of 4.1 apply to AYUSH treatment is open.
+      guards: [room_limit_on_ayush]
+    3.5_pre_hospitalisation:
+      pages: [5, 7, 20]
+      section: "4.4 Pre Hospitalization; 3.36"
+      text: "for a fixed period of 30 days prior to the date of admissible hospitalization covered under the policy"
+      modelled: "Bills dated up to 30 days before the admission date."
+      reading: >-
+        Whether the 30th day before is inside is open, and so is whether day care
+        is a "hospitalization requiring inpatient care".
+      guards: [bill_on_last_day_of_window, pre_post_with_day_care]
+    3.6_post_hospitalisation:
+      pages: [5, 7, 20]
+      section: "4.5 Post Hospitalization; 3.37"
+      text: "for a fixed period of 60 days from the date of discharge from the Hospital"
+      modelled: "Bills dated up to 60 days after the discharge date."
+      guards: [bill_on_last_day_of_window, pre_post_with_day_care]
+    4.1_ped_waiting:
+      pages: [5, 9, 20]
+      section: "6.1 Pre-Existing Diseases (Code - Excl01); 3.35"
+      text: "Expenses related to the treatment of a pre-existing Disease (PED) and its direct complications shall be excluded until the expiry of 36 months of continuous coverage after the date of inception of the first policy with us."
+      modelled: >-
+        36 months from first inception, keyed off the PEDs declared on the policy
+        (6.1.d: covered after the wait only if declared and accepted). No accident
+        exception. Sum insured enhancement (6.1.b) is not modelled.
+      guards: [wait_ends_on_admission_day]
+    4.2_specific_disease_waiting:
+      pages: [9, 10]
+      section: "6.3 Specific Waiting Period (Code - Excl02), lists i (24 months) and ii (36 months)"
+      text: "Expenses related to the treatment of the listed Conditions, surgeries/treatments shall be excluded until the expiry of 24/ 36 months of continuous coverage after the date of inception of the first policy with the insurer."
+      modelled: >-
+        One condition group per listed item, 19 at 24 months and 2 at 36 months.
+        A claim matching several items waits for the longest (6.3.c takes the
+        longer of PED and listed waits; the same holds between items, e.g. knee
+        osteoarthritis is both "Non Infective Arthritis" and "Age-related
+        Osteoarthritis").
+      guards: [wait_ends_on_admission_day]
+    4.2_accident_exception:
+      pages: [9]
+      section: "6.3.a"
+      text: "This exclusion shall not be applicable for claims arising due to an accident."
+      modelled: "accident_exempt = true for every listed item."
+    4.3_initial_waiting:
+      pages: [9]
+      section: "6.2 First Thirty Days Waiting Period (Code - Excl03)"
+      text: "Expenses related to the treatment of any illness within 30 days from the first policy commencement date shall be excluded except claims arising due to an accident, provided the same are covered."
+      modelled: "30 days from first inception; 6.2.b (continuous coverage for more than twelve months) is the same thing, since first inception is the start of continuous cover."
+      reading: Whether "within 30 days from 1 April" includes 1 May is open.
+      guards: [wait_ends_on_admission_day]
+    4.3_accident_exception:
+      pages: [9]
+      section: "6.2.a"
+      text: "except claims arising due to an accident"
+      modelled: "accident_exempt = true."
+    4.4_investigation_evaluation:
+      pages: [10]
+      section: "7.1 Investigation & Evaluation (Code- Excl04)"
+      modelled: false
+    4.5_rest_cure_rehabilitation:
+      pages: [10]
+      section: "7.2 Rest Cure, rehabilitation and respite care (Code- Excl05)"
+      modelled: false
+    4.6_obesity_weight_control:
+      pages: [10]
+      section: "7.3 Obesity/ Weight Control (Code- Excl06)"
+      modelled: false
+    4.7_change_of_gender:
+      pages: [10]
+      section: "7.4 Change-of-Gender treatments (Code- Excl07)"
+      modelled: false
+    4.8_cosmetic_surgery:
+      pages: [7, 10]
+      section: "7.5 Cosmetic or Plastic Surgery (Code- Excl08); 4.1.1.iii"
+      text: "Expenses for cosmetic or plastic surgery or any treatment to change appearance unless for reconstruction following an Accident, Burn(s) or Cancer or as part of medically necessary treatment to remove a direct and immediate health risk to the insured."
+      modelled: >-
+        Matched by procedure: aesthetic rhinoplasty and liposuction. A
+        reconstruction after an accident is covered ("Plastic surgery
+        necessitated due to disease or injury", 4.1.1.iii): the near-miss cases.
+    4.9_hazardous_sports:
+      pages: [10]
+      section: "7.6 Hazardous or Adventure sports (Code- Excl09)"
+      modelled: false
+    4.10_breach_of_law:
+      pages: [10, 11]
+      section: "7.7 Breach of law (Code- Excl10)"
+      modelled: false
+    4.11_excluded_providers:
+      pages: [11]
+      section: "7.8 Excluded Providers (Code- Excl11)"
+      modelled: false
+    4.12_substance_abuse:
+      pages: [11]
+      section: "7.9 (Code- Excl12)"
+      modelled: false
+    4.13_hydros_spas:
+      pages: [11]
+      section: "7.10 (Code- Excl13)"
+      modelled: false
+      reading: An AYUSH hospital (definition 3.4) is not a health hydro or nature cure clinic.
+    4.14_dietary_supplements:
+      pages: [11]
+      section: "7.11 (Code- Excl14)"
+      text: "Dietary supplements and substances which are available naturally and that can be purchased without prescription, including but not limited to Vitamins, minerals and organic substances unless prescribed by a medical practitioner as part of hospitalization claim or day care procedures."
+      modelled: "Removed line by line. The bill lines state the item was bought over the counter and not prescribed."
+    4.15_refractive_error:
+      pages: [11]
+      section: "7.12 (Code- Excl15)"
+      text: "Expenses related to the treatment for correction of eye sight due to refractive error less than 7.5 diopters."
+      modelled: >-
+        Matched on H52 and LASIK. Every catalogue refractive error states its
+        power, and all are under 7.5 dioptres (pinned by a test); a stronger one
+        would need its own code before it could be added.
+    4.16_unproven_treatments:
+      pages: [11]
+      section: "7.13 (Code- Excl16)"
+      modelled: false
+    4.17_sterility_infertility:
+      pages: [11]
+      section: "7.14 Sterility and Infertility (Code- Excl17)"
+      text: "Assisted Reproduction services including artificial insemination and advanced reproductive technologies such as IVF, ZIFT, GIFT, ICSI"
+      modelled: "Matched on N46, N97 and IVF."
+    4.18_maternity:
+      pages: [11]
+      section: "7.15 Maternity Expenses (Code- Excl18)"
+      modelled: false
+      reading: No catalogue condition is maternity-related.
+    5.1_deductible:
+      modelled: false
+      reading: The wording has no deductible.
+    5.2_copay:
+      pages: [2, 19, 20]
+      section: "7.III.5 Co-payment; 3.9; 8 Table of Benefits (Co Pay)"
+      text: "Each and every claim under the Policy shall be subject to a Copayment of 5% applicable to claim amount admissible and payable as per the terms and conditions of the Policy."
+      modelled: "5% on every claim, after the sub-limits and before the sum insured limit (engine/rules.py amount order)."
+      reading: >-
+        "Admissible and payable" could put co-pay after the sum insured limit.
+        The two orders agree only while the claim stays under the limit, so no
+        case reaches it: this product has no sum-insured-exhausted cases.
+      guards: [copay_after_sum_insured]
+    5.3_sum_insured:
+      pages: [1, 6, 8]
+      section: "2 Operative Clause; 3.52 Sum Insured; 5 Cumulative Bonus"
+      text: "Maximum liability of the Company under all such Claims during each Policy Year shall be the Sum Insured (Individual or Floater) opted and Cumulative Bonus (if any) specified in the Schedule."
+      modelled: >-
+        Payable is capped at sum insured plus cumulative bonus. Bonus is 5% per
+        claim-free year up to 50% (5), as stated on the certificate. No earlier
+        claim in the policy year is modelled, so the whole sum insured is available.
+      guards: [copay_after_sum_insured]
+    6.1_policy_period:
+      pages: [1, 6, 16, 19]
+      section: "2 Operative Clause; 3.48 Policy period; 7.I.13.e; 8 Table of Benefits (Policy Period)"
+      text: "If during the Policy Period one or more Insured Person (s) is required to be hospitalized"
+      modelled: "One-year policies; the admission date must fall within the period. Coverage is not available during the grace period (7.I.13.e)."
+    7.1_missing_documents:
+      pages: [18]
+      section: "7.III.4 Documents to be submitted"
+      text: "The reimbursement claim is to be supported with the following original documents"
+      modelled: >-
+        The claim form, itemised bill and discharge summary are required; one
+        missing escalates, as settled in docs/AGENT_BRIEF.md.
+    7.2_document_mismatch:
+      pages: [12, 13]
+      section: "7.I.2 Condition Precedent to Admission of Liability; 7.I.8 Fraud"
+      modelled: >-
+        Not a rule of the wording: a benchmark convention, the same for every
+        product, and so stated in the agent brief. Documents that contradict each
+        other in a way that could change the outcome are escalated, not decided.
+    A1_non_payable_items:
+      pages: [8, 21, 22, 23]
+      section: "4.7; Annexure A, Lists I-IV"
+      text: "The expenses that are not covered in this policy are placed under List-I of Annexure-A. The list of expenses that are to be subsumed into room charges, or procedure charges or costs of treatment are placed under List-II, List-III and List-IV of Annexure-A respectively."
+      modelled: >-
+        List I items are not covered; List II-IV items are part of room,
+        procedure or treatment charges and so are never paid as lines of their
+        own. Each catalogue item code, with its list and number, is in
+        sampler/products/arogya_sanjeevani.py.
+
+  not_modelled:
+    - section: "4.1.1.ii"
+      text: "Dental treatment, necessitated due to disease or injury"
+      reading: Covered; no catalogue condition is dental.
+    - section: "4.1.1.iii"
+      text: "Plastic surgery necessitated due to disease or injury"
+      reading: Covered; it is why a reconstruction after an accident is payable despite Excl08.
+    - section: "4.1.1.v"
+      text: "Expenses incurred on road Ambulance subject to a maximum of Rs. 2000/- per hospitalization."
+      reading: No bill carries ambulance charges.
+    - section: "4.6"
+      text: "The following procedures will be covered (wherever medically indicated) whether as in patient or as part of day care treatment in a hospital up to 50% of Sum Insured"
+      reading: No catalogue procedure is on the list of modern treatments.
+    - section: "7.21"
+      text: "In respect of the existing diseases, disclosed by the insured and mentioned in the policy schedule (based on insured’s consent), policyholder is not entitled to get the coverage for specified ICD codes."
+      reading: No member has a disease-specific permanent exclusion.
+    - section: "6.1.b; 6.3.b; 7.II.8"
+      text: "In case of enhancement of sum insured the exclusion shall apply afresh to the extent of sum insured increase."
+      reading: No policy has had its sum insured raised.
+    - section: "7.III.2; 7.III.3"
+      text: "For reimbursement of claims the insured person may submit the necessary documents to Company within the prescribed time limit as specified hereunder"
+      reading: Every claim is taken as notified and submitted in time.
+
+NEW_INDIA_MEDICLAIM:
+  document: new_india_mediclaim
+  profile: sampler/products/new_india_mediclaim.py
+  notes: >-
+    An insurer's own product rather than a standard one, so its limits are shares
+    of the sum insured with no rupee ceiling, its day care cover is a closed list,
+    and its waiting periods run to four tiers. The generated documents are issued
+    by an invented insurer under an invented name and UIN: the rules are this
+    product's, the branding is not.
+  general:
+    sum_insured_options:
+      pages: [9]
+      section: "2.61 Sum Insured"
+      text: "SUM INSURED is the maximum amount of coverage opted for each Insured Person and as shown in the Schedule."
+      reading: >-
+        The wording leaves the amounts to the schedule. Two lakh is the lowest
+        sampled: below that the 1% room limit falls under every ward rate in the
+        catalogue, and the cumulative bonus starts at two lakh (3.18 Note 2.i).
+    sum_insured_definition:
+      pages: [8, 9, 14]
+      section: "2.50 Cumulative Bonus Buffer; 2.61 Sum Insured Note; 3.18 Note 1"
+      text: "Unless otherwise specified, Cumulative Bonus shall not be treated as part of the Sum Insured for the purposes of reckoning any limit specified in the Policy."
+      reading: >-
+        Settled by the wording, unlike Arogya Sanjeevani: a percentage limit is
+        worked on the sum insured alone. No guard is needed for it here.
+    launch:
+      reading: >-
+        The product line is much older than this revision of its wording, so a
+        member may have been covered continuously for longer than the document has
+        existed and ProductProfile.launched is None.
+    rendered_documents:
+      pages: [26, 27]
+      section: "5.20.c Notice of claim"
+      reading: >-
+        The bundle renders the claim form (i), the numbered bill and discharge
+        certificate (iii), and the policy's own certificate and wording. The agent
+        brief says intake verified the rest.
+
+  clauses:
+    2.1_min_hospitalisation:
+      pages: [4]
+      section: "2.18 Hospitalisation"
+      text: "HOSPITALISATION means admission in a Hospital for a minimum period of twenty four consecutive hours of Inpatient Care except for specified procedures / treatments as mentioned in Annexure I, where such admission could be for a period of less than twenty four consecutive hours."
+      modelled: "min_stay_hours = 24."
+      guards: [stay_of_exactly_the_minimum]
+    2.2_day_care:
+      pages: [3, 4, 30, 31, 32]
+      section: "2.11 Day Care Treatment; 2.18; Annexure I"
+      text: "ANNEXURE I: LIST OF DAY CARE PROCEDURES"
+      modelled: >-
+        A closed list of 226 procedures, unlike Arogya Sanjeevani's open
+        definition. day_care_procedures holds the catalogue procedures that appear
+        on it, each with its item number in a comment. A hernia repair is not on
+        the list, so a hernia repair finished inside a day is not hospitalisation
+        under this product though it is under Arogya Sanjeevani.
+    3.1_room_rent_limit:
+      pages: [7, 10]
+      section: "3.1(a); 3.2 Proportionate Deduction; 2.42 Room Rent; 2.46 Associate Medical Expenses"
+      text: "Room rent, Boarding, DMO / RMO / CMO / RMP Charges, Nursing (Including Injection / Drugs and Intra venous fluid administration expenses), not exceeding 1% of the Sum Insured per day"
+      modelled: >-
+        room_cap = 1% of the sum insured a day, with no rupee ceiling. Nursing is
+        inside that limit, so it counts towards the daily rate
+        (room_rate_includes). Above the limit the deduction falls on Associate
+        Medical Expenses only, which 2.46 defines as the professional fees,
+        anaesthesia, theatre and procedure charges.
+      reading: >-
+        3.2 spares pharmacy and consumables, implants and devices, and
+        diagnostics. Note also that it does not apply where the hospital does not
+        bill by room category; every hospital in the dataset does.
+      guards: [room_limit_with_pre_post_bills, room_limit_on_ayush]
+    3.2_icu_limit:
+      pages: [10]
+      section: "3.1(b)"
+      text: "Intensive Care Unit (ICU) / Intensive Cardiac Care Unit (ICCU), Intensivist charges, Monitor and Pulse Oxymeter expenses not exceeding 2% of the Sum Insured per day."
+      modelled: "icu_cap = 2% of the sum insured a day, with no rupee ceiling."
+      reading: >-
+        Intensive care has its own limit and is not an Associate Medical Expense,
+        so it is never scaled with the room. No guard is needed for that here.
+      guards: [room_limit_on_ayush]
+    3.3_disease_sublimit:
+      pages: [10]
+      section: "3.3 Limit on payment for Cataract"
+      text: "Our liability for payment of any claim relating to Cataract, for each eye, shall not exceed 20% of the Sum Insured subject to a maximum of Rs. 50,000."
+      modelled: "One sub-limit, cataract, per eye operated."
+      guards: [sublimit_with_pre_post]
+    3.4_ayush:
+      pages: [10]
+      section: "3.4 Coverage under AYUSH treatment"
+      text: "Expenses incurred for inpatient care treatment under Ayurveda, Yoga and Naturopathy, Unani, Siddha and Homeopathy systems of medicines is covered up to 100% of Sum Insured"
+      modelled: >-
+        Covered up to the sum insured, with no limit of its own and no requirement
+        that the hospital be an AYUSH hospital, which is where this product parts
+        company with Arogya Sanjeevani.
+      guards: [room_limit_on_ayush]
+    3.5_pre_hospitalisation:
+      pages: [6, 10]
+      section: "3.1(e); 2.36"
+      text: "Pre-Hospitalization Medical expenses for up to 30 days"
+      modelled: "Bills dated up to 30 days before the admission date."
+      guards: [bill_on_last_day_of_window, pre_post_with_day_care]
+    3.6_post_hospitalisation:
+      pages: [6, 7, 10]
+      section: "3.1(f); 2.37"
+      text: "Post-Hospitalization Medical expenses for up to 60 days"
+      modelled: "Bills dated up to 60 days after the discharge date."
+      guards: [bill_on_last_day_of_window, pre_post_with_day_care]
+    4.1_ped_waiting:
+      pages: [6, 16]
+      section: "4.1 Pre-existing Diseases (Code- Excl01); 2.35"
+      text: "Expenses related to the treatment of a pre-existing Disease (PED) and its direct complications shall be excluded until the expiry of 48 months of continuous coverage after the date of inception of the first policy with us."
+      modelled: "48 months, not the 36 of the 2024 standard: this wording is the 2023 filing and the engine matches the document."
+      guards: [wait_ends_on_admission_day]
+    4.2_specific_disease_waiting:
+      pages: [17, 18]
+      section: "4.2 Specific Waiting Period (Code- Excl02), lists (i) to (iv)"
+      text: "Expenses related to the treatment of the following listed conditions, surgeries / treatments shall be excluded until the expiry of Ninety Days / 24 / 36/ 48 months of continuous coverage"
+      modelled: >-
+        Four tiers where Arogya Sanjeevani has two, and the shortest is ninety days
+        for diabetes, hypertension and cardiac conditions. Each listed item is a
+        group of its own, so a claim under two of them waits for the longer, as
+        4.2.c requires.
+      reading: >-
+        "Skin Disorders" is read as the chronic ones and not as infections of the
+        skin, so a cellulitis is outside it; the generated wording says so in terms
+        rather than leaving the agent to guess.
+      guards: [wait_ends_on_admission_day]
+    4.2_accident_exception:
+      pages: [17]
+      section: "4.2.a"
+      text: "This exclusion shall not be applicable for claims arising due to an accident."
+      modelled: "accident_exempt = true for every listed item."
+    4.3_initial_waiting:
+      pages: [18]
+      section: "4.3 First Thirty Days Waiting Period (Code- Excl03)"
+      text: "Expenses related to the treatment of any illness within 30 days from the first policy commencement date shall be excluded except claims arising due to an accident"
+      modelled: "30 days from first inception."
+      guards: [wait_ends_on_admission_day]
+    4.3_accident_exception:
+      pages: [18]
+      section: "4.3.a"
+      text: "except claims arising due to an accident"
+      modelled: "accident_exempt = true."
+    4.4_investigation_evaluation:
+      pages: [18]
+      section: "4.4.1 (Code- Excl04)"
+      modelled: false
+    4.5_rest_cure_rehabilitation:
+      pages: [18]
+      section: "4.4.2 (Code- Excl05)"
+      modelled: false
+    4.6_obesity_weight_control:
+      pages: [18]
+      section: "4.4.3 (Code- Excl06)"
+      modelled: false
+    4.7_change_of_gender:
+      pages: [19]
+      section: "4.4.4 (Code- Excl07)"
+      modelled: false
+    4.8_cosmetic_surgery:
+      pages: [19]
+      section: "4.4.5 Cosmetic or Plastic Surgery (Code- Excl08)"
+      text: "Expenses for cosmetic or plastic surgery or any treatment to change appearance unless for reconstruction following an Accident, Burn(s) or Cancer"
+      modelled: "Matched by procedure, so a reconstruction after an accident stays covered."
+    4.9_hazardous_sports:
+      pages: [19]
+      section: "4.4.6 (Code- Excl09)"
+      modelled: false
+    4.10_breach_of_law:
+      pages: [19]
+      section: "4.4.7 (Code- Excl10)"
+      modelled: false
+    4.11_excluded_providers:
+      pages: [19]
+      section: "4.4.8 (Code-Excl11)"
+      modelled: false
+    4.12_substance_abuse:
+      pages: [19]
+      section: "4.4.9 (Code- Excl12)"
+      modelled: false
+    4.13_hydros_spas:
+      pages: [19]
+      section: "4.4.10 (Code- Excl13)"
+      modelled: false
+    4.14_dietary_supplements:
+      pages: [19]
+      section: "4.4.11 (Code- Excl14)"
+      text: "Dietary supplements and substances that can be purchased without prescription, including but not limited to Vitamins, minerals and organic substances unless prescribed by a medical practitioner as part of hospitalization claim or day care procedure."
+      modelled: "Removed line by line."
+    4.15_refractive_error:
+      pages: [19]
+      section: "4.4.12 Refractive Error (Code- Excl15)"
+      text: "Expenses related to the treatment for correction of eye sight due to refractive error less than 7.5 dioptres."
+      modelled: "Matched on H52 and LASIK; every catalogue refractive error is under 7.5 dioptres."
+    4.16_unproven_treatments:
+      pages: [19]
+      section: "4.4.13 (Code- Excl16)"
+      modelled: false
+    4.17_sterility_infertility:
+      pages: [20]
+      section: "4.4.14 Sterility and Infertility (Code- Excl17)"
+      text: "Assisted Reproduction services including artificial insemination and advanced reproductive technologies such as IVF, ZIFT, GIFT, ICSI"
+      modelled: "Matched on N46, N97 and IVF."
+    4.18_maternity:
+      pages: [20]
+      section: "4.4.15 Maternity Expenses (Code - Excl18)"
+      modelled: false
+    5.1_deductible:
+      modelled: false
+      reading: The wording has no deductible.
+    5.2_copay:
+      pages: [13]
+      section: "3.16 Optional Cover IV: Voluntary Co-pay"
+      text: "If the Insured person opts for voluntary co-pay of 20%, a discount of 15% shall be of given on the premium payable for the Insured Person."
+      modelled: >-
+        There is no co-payment unless the policyholder buys one, so copay_options_bp
+        is a single 20% and mandatory_copay_bp is zero. Where it applies the engine
+        takes it before the sum insured limit.
+      guards: [copay_after_sum_insured]
+    5.3_sum_insured:
+      pages: [9, 14]
+      section: "3.1; 2.61; 3.18 Cumulative Bonus"
+      text: "The Sum Insured under Policy shall be increased by 25% at each renewal in respect of each claim free year of insurance, subject to maximum of 50%."
+      modelled: "Payable is capped at sum insured plus cumulative bonus; the bonus is 25% a claim-free year up to 50%."
+      guards: [copay_after_sum_insured]
+    6.1_policy_period:
+      pages: [8, 24]
+      section: "2.56 Policy Period; 5.11.iv"
+      text: "POLICY PERIOD means period of one policy year as mentioned in the schedule for which the Policy is issued"
+      modelled: "One-year policies; the admission date must fall within the period."
+    7.1_missing_documents:
+      pages: [26, 27]
+      section: "5.20.c Notice of claim"
+      text: "Claim Form duly filled and signed by the claimant"
+      modelled: "The claim form, itemised bill and discharge summary are required; one missing escalates."
+    7.2_document_mismatch:
+      pages: [22]
+      section: "5.5 Fraud; 5.2 Condition Precedent"
+      modelled: >-
+        Not a rule of this wording: a benchmark convention, the same for every
+        product, stated in the agent brief.
+    A1_non_payable_items:
+      pages: [20, 33, 34, 35]
+      section: "4.4.18; Annexure II, Lists I-IV"
+      text: "Service charges, Surcharges, Luxury Tax, Admission fees, Registration fees, Record Charges and Telephone Charges levied by the Hospital."
+      modelled: >-
+        Annexure II is IRDAI's standard set of lists, the same as Arogya
+        Sanjeevani's Annexure A, so the two products share item codes.
+
+  not_modelled:
+    - section: "3.5 Hospital Cash"
+      text: "we will pay Hospital Cash at the rate of 0.1% of the Sum Insured, for each day of Hospitalisation"
+      reading: >-
+        A daily allowance rather than reimbursement of a bill, which the engine does
+        not model. It is therefore absent from the wording the agent is given, so
+        nothing the agent reads depends on it.
+    - section: "3.7 Payment of ambulance charges"
+      text: "We will pay You the charges for Ambulance services not exceeding 1% of the Sum Insured"
+      reading: No bill in the dataset carries ambulance charges.
+    - section: "3.10 Reinstatement of Sum Insured"
+      text: "If the Sum Insured is exhausted due to a claim admissible under the Policy, then the Sum Insured shall be reinstated"
+      reading: No case has an earlier claim in the same policy year.
+    - section: "3.20 Coverage for modern treatments or procedures"
+      text: "The following procedures will be covered (wherever medically indicated) either as in patient or as part of day care treatment in a hospital up to the limit specified against each procedure"
+      reading: No catalogue procedure is on the list.
+    - section: "3.13; 3.14; 3.15; 3.17"
+      text: "OPTIONAL COVER I: NO PROPORTIONATE DEDUCTION"
+      reading: The optional covers are not bought on any sampled policy.
+    - section: "5.24 Enhancement of Sum Insured"
+      text: "In respect of any enhancement of Sum Insured, exclusions 4.1, 4.2 and 4.3 would apply to the additional Sum Insured from such date."
+      reading: No policy has had its sum insured raised.

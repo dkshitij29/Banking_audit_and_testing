@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# Environment and secrets (the OpenRouter key lives in .env)
+.env
+.env.*
+.venv/
+__pycache__/
+*.pyc
+
+# Tool caches
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+
+# Generated output and third-party wordings (never committed; see CLAUDE.md)
+datasets/
+corpus/pdfs/
+
+# Render cache and spend ledger (keeps regeneration free; never committed)
+.render-cache/
+
+# Lock file (regenerate locally)
+uv.lock
