@@ -1,40 +1,6 @@
+"""API model schemas."""
+
 from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import date
-
-
-class UploadFilingRequest(BaseModel):
-    ticker: str
-    filing_type: Optional[str] = None  # 10-K, 10-Q, 8-K, DEF 14A
-
-
-class UploadFilingResponse(BaseModel):
-    filing_id: str
-    sections_extracted: int
-    status: str
-
-
-class ResearchRequest(BaseModel):
-    ticker: str
-    filing_ids: list[str] = Field(default_factory=list)
-
-
-class ResearchResponse(BaseModel):
-    report: str
-    report_id: str
-
-
-class DCFRequest(BaseModel):
-    ticker: str
-    growth_rate: float = 0.08
-    wacc: Optional[float] = None
-    terminal_growth: float = 0.03
-    projection_years: int = 10
-
-
-class CompsRequest(BaseModel):
-    ticker: str
-    peers: list[str] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):
@@ -43,8 +9,34 @@ class HealthResponse(BaseModel):
     providers: dict
 
 
-class FilingSummary(BaseModel):
-    id: str
-    type: str
-    date: Optional[date] = None
-    sections: int
+class StageResult(BaseModel):
+    stage: str
+    status: str  # "complete" | "partial" | "skipped"
+    summary: str
+
+
+class ValuationMetrics(BaseModel):
+    dcf_implied_price: float | None = None
+    comps_implied_price: float | None = None
+    fair_value_low: float = 0
+    fair_value_high: float = 0
+    fair_value_mid: float = 0
+    current_price: float = 0
+    upside_pct: float = 0
+    confidence: str = "Low"
+    wacc: float | None = None
+    terminal_growth: float | None = None
+
+
+class AnalyzeResponse(BaseModel):
+    verdict: str  # "UNDERVALUED" | "OVERVALUED" | "FAIRLY_VALUED"
+    rating: str   # "BUY" | "HOLD" | "SELL"
+    reasoning: str
+    stages: list[StageResult] = Field(default_factory=list)
+    valuation: ValuationMetrics = Field(default_factory=ValuationMetrics)
+    bull_case: list[str] = Field(default_factory=list)
+    bear_case: list[str] = Field(default_factory=list)
+    red_flags: list[str] = Field(default_factory=list)
+    dcf_assumptions: dict = Field(default_factory=dict)
+    what_would_change: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)

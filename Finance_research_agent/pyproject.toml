@@ -20,6 +20,7 @@ dependencies = [
     "pdfplumber",
     "beautifulsoup4",
     "rank-bm25",
+    "rapidfuzz",
 
     # Visualization
     "matplotlib",

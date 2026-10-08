@@ -1,0 +1,60 @@
+symbol,name,sector,industry,market_cap_inr,snapshot_date
+RELIANCE.NS,Reliance Industries,Energy,Oil Gas & Consumable Fuels,18000000000000,2025-01-01
+TCS.NS,Tata Consultancy Services,Technology,Information Technology Services,14000000000000,2025-01-01
+INFY.NS,Infosys,Technology,Information Technology Services,7500000000000,2025-01-01
+HCLTECH.NS,HCL Technologies,Technology,Information Technology Services,3800000000000,2025-01-01
+WIPRO.NS,Wipro,Technology,Information Technology Services,3200000000000,2025-01-01
+TECHM.NS,Tech Mahindra,Technology,Information Technology Services,1500000000000,2025-01-01
+LTIM.NS,LTIMindtree,Technology,Information Technology Services,1900000000000,2025-01-01
+PERSISTENT.NS,Persistent Systems,Technology,Information Technology Services,700000000000,2025-01-01
+HDFCBANK.NS,HDFC Bank,Financials,Banks,12000000000000,2025-01-01
+ICICIBANK.NS,ICICI Bank,Financials,Banks,8000000000000,2025-01-01
+SBIN.NS,State Bank of India,Financials,Banks,7000000000000,2025-01-01
+KOTAKBANK.NS,Kotak Mahindra Bank,Financials,Banks,3500000000000,2025-01-01
+AXISBANK.NS,Axis Bank,Financials,Banks,3200000000000,2025-01-01
+INDUSINDBANK.NS,IndusInd Bank,Financials,Banks,800000000000,2025-01-01
+BANKBARODA.NS,Bank of Baroda,Financials,Banks,1200000000000,2025-01-01
+BAJFINANCE.NS,Bajaj Finance,Financials,Consumer Finance,4500000000000,2025-01-01
+MARUTI.NS,Maruti Suzuki,Consumer Cyclical,Automobiles,3800000000000,2025-01-01
+TATAMOTORS.NS,Tata Motors,Consumer Cyclical,Automobiles,3500000000000,2025-01-01
+M&M.NS,Mahindra & Mahindra,Consumer Cyclical,Automobiles,2800000000000,2025-01-01
+BAJAJ-AUTO.NS,Bajaj Auto,Consumer Cyclical,Automobiles,1800000000000,2025-01-01
+HEROMOTOCO.NS,Hero MotoCorp,Consumer Cyclical,Automobiles,900000000000,2025-01-01
+EICHERMOT.NS,Eicher Motors,Consumer Cyclical,Automobiles,1500000000000,2025-01-01
+TATAMOTORS.NS,Tata Motors,Consumer Cyclical,Automobiles,3500000000000,2025-01-01
+ITC.NS,ITC,Consumer Defensive,Consumer Staples,2800000000000,2025-01-01
+HINDUNILVR.NS,Hindustan Unilever,Consumer Defensive,Consumer Staples,5500000000000,2025-01-01
+NESTLEIND.NS,Nestle India,Consumer Defensive,Consumer Staples,2200000000000,2025-01-01
+BRITANNIA.NS,Britannia Industries,Consumer Defensive,Consumer Staples,1200000000000,2025-01-01
+DABUR.NS,Dabur India,Consumer Defensive,Consumer Staples,500000000000,2025-01-01
+COLPAL.NS,Colgate-Palmolive India,Consumer Defensive,Consumer Staples,600000000000,2025-01-01
+SUNPHARMA.NS,Sun Pharmaceutical,Healthcare,Pharmaceuticals,4000000000000,2025-01-01
+DRREDDY.NS,Dr. Reddys Laboratories,Healthcare,Pharmaceuticals,1200000000000,2025-01-01
+DIVISLAB.NS,Divis Laboratories,Healthcare,Pharmaceuticals,2000000000000,2025-01-01
+CIPLA.NS,Cipla,Healthcare,Pharmaceuticals,1100000000000,2025-01-01
+APOLLOHOSP.NS,Apollo Hospitals,Healthcare,Hospitals,3500000000000,2025-01-01
+MAXHEALTH.NS,Max Healthcare,Healthcare,Hospitals,1200000000000,2025-01-01
+TATASTEEL.NS,Tata Steel,Basic Materials,Steel,1800000000000,2025-01-01
+JSWSTEEL.NS,JSW Steel,Basic Materials,Steel,1500000000000,2025-01-01
+HINDALCO.NS,Hindalco Industries,Basic Materials,Aluminum,2200000000000,2025-01-01
+ULTRACEMCO.NS,UltraTech Cement,Materials,Cement,2800000000000,2025-01-01
+GRASIM.NS,Grasim Industries,Materials,Cement,1100000000000,2025-01-01
+SHREECEM.NS,Shree Cement,Materials,Cement,600000000000,2025-01-01
+LT.NS,Larsen & Toubro,Industrials,Construction,4500000000000,2025-01-01
+SIEMENS.NS,Siemens,Industrials,Industrial Conglomerates,2500000000000,2025-01-01
+ABB.NS,ABB India,Industrials,Electrical Equipment,2200000000000,2025-01-01
+BHARTIARTL.NS,Bharti Airtel,Communication Services,Telecom Services,7000000000000,2025-01-01
+ONGC.NS,ONGC,Energy,Oil & Gas E&P,2000000000000,2025-01-01
+IOC.NS,Indian Oil Corporation,Energy,Oil & Gas Refining,1100000000000,2025-01-01
+BPCL.NS,Bharat Petroleum,Energy,Oil & Gas Refining,700000000000,2025-01-01
+GAIL.NS,GAIL India,Energy,Oil & Gas Midstream,1200000000000,2025-01-01
+NTPC.NS,NTPC,Utilities,Electric Utilities,3000000000000,2025-01-01
+POWERGRID.NS,Power Grid Corporation,Utilities,Electric Utilities,2500000000000,2025-01-01
+COALINDIA.NS,Coal India,Energy,Coal,1200000000000,2025-01-01
+TITAN.NS,Titan Company,Consumer Cyclical,Luxury Goods,3500000000000,2025-01-01
+ASIANPAINT.NS,Asian Paints,Consumer Cyclical,Paints,3000000000000,2025-01-01
+ADANIENT.NS,Adani Enterprises,Industrials,Trading Companies,3200000000000,2025-01-01
+ADANIPORTS.NS,Adani Ports,Industrials,Marine Ports,3500000000000,2025-01-01
+PIDILITIND.NS,Pidilite Industries,Materials,Specialty Chemicals,1200000000000,2025-01-01
+BATAINDIA.NS,Bata India,Consumer Cyclical,Textile Apparel,400000000000,2025-01-01
+ZOMATO.NS,Zomato,Consumer Cyclical,Internet Retail,2500000000000,2025-01-01

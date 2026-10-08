@@ -2,8 +2,8 @@
 set -e
 
 # ─── Finance Research Agent — Start Script ───────────────────────────────────
-# Starts both the backend (uvicorn on :8000) and frontend (Vite on :5173).
-# Kill either terminal or Ctrl+C to stop everything.
+# Starts backend (uvicorn :8000) and frontend (Vite :5173).
+# Ctrl+C to stop.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -31,39 +31,43 @@ if [ ! -d ".venv" ]; then
 fi
 
 if [ ! -f ".env" ]; then
-    echo -e "${RED}✗  .env file missing. Copying .env.example → .env${NC}"
-    cp .env.example .env
+    echo -e "${YELLOW}⚠  .env file missing. Copying .env.example → .env${NC}"
+    [ -f ".env.example" ] && cp .env.example .env || echo -e "${RED}✗  .env.example not found. Please create .env manually.${NC}"
     echo -e "${YELLOW}   Edit .env to configure your LLM provider.${NC}"
     echo ""
 fi
 
-# Install Python deps (fast no-op if already done)
+# Install Python deps
 echo -e "${CYAN}📦 Installing Python dependencies...${NC}"
 source .venv/bin/activate
 uv pip install -e ".[dev,openai]" --quiet 2>/dev/null
 
-# Node / frontend
-if [ ! -d "frontend/node_modules" ]; then
-    echo -e "${YELLOW}⚠  Frontend dependencies not installed.${NC}"
+# Install frontend deps always (fast no-op if already done)
+SKIP_FRONTEND=false
+if [ -d "frontend" ]; then
     if command -v npm &> /dev/null; then
         echo -e "${CYAN}📦 Installing frontend dependencies...${NC}"
-        (cd frontend && npm install --silent)
+        (cd frontend && npm install 2>&1 | tail -3)
     else
-        echo -e "${RED}✗  npm not found. Cannot start frontend.${NC}"
-        echo "   Skipping frontend — starting backend only."
+        echo -e "${RED}✗  npm not found. Skipping frontend — backend only.${NC}"
         SKIP_FRONTEND=true
     fi
+else
+    SKIP_FRONTEND=true
 fi
 
 # ── Show config ──────────────────────────────────────────────────────────────
-PROVIDER=$(grep -E "^LLM_PROVIDER=" .env 2>/dev/null | cut -d= -f2 || echo "openai")
-MODEL=$(grep -E "^LLM_MODEL=" .env 2>/dev/null | cut -d= -f2 || echo "gpt-4o")
-BASE_URL=$(grep -E "^VLLM_BASE_URL=" .env 2>/dev/null | cut -d= -f2- || echo "N/A")
+PROVIDER=$(grep -E "^LLM_PROVIDER=" .env 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
+MODEL=$(grep -E "^LLM_MODEL=" .env 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
+BASE_URL=$(grep -E "^VLLM_BASE_URL=" .env 2>/dev/null | cut -d= -f2- | tr -d '[:space:]')
+
+PROVIDER=${PROVIDER:-openai}
+MODEL=${MODEL:-gpt-4o}
 
 echo -e "${GREEN}✓${NC}  LLM Provider : $PROVIDER"
 echo -e "${GREEN}✓${NC}  Model        : $MODEL"
 if [ "$PROVIDER" = "vllm" ]; then
-    echo -e "${GREEN}✓${NC}  Base URL     : $BASE_URL
+    echo -e "${GREEN}✓${NC}  Base URL     : ${BASE_URL:-http://localhost:9000/v1}
 "
 fi
 
@@ -96,24 +100,23 @@ for i in $(seq 1 20); do
     sleep 0.5
 done
 
-# ── Start Frontend (if not skipped) ───────────────────────────────────────────
-if [ "$SKIP_FRONTEND" != true ]; then
+# ── Start Frontend ────────────────────────────────────────────────────────────
+if [ "$SKIP_FRONTEND" != true ] && [ -d "frontend" ]; then
     echo -e "${CYAN}🚀 Starting frontend on http://localhost:5173${NC}"
     (cd frontend && npx vite --host 0.0.0.0 --port 5173) &
     PIDS+=($!)
     echo -e "   ${GREEN}✓ ready${NC}"
+else
+    echo -e "${YELLOW}⚠  Frontend skipped — API only mode${NC}"
 fi
 
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Backend API  → http://localhost:8000${NC}"
 echo -e "${GREEN}  API Docs     → http://localhost:8000/docs${NC}"
-if [ "$SKIP_FRONTEND" != true ]; then
-    echo -e "${GREEN}  Frontend     → http://localhost:5173${NC}"
-fi
+[ "$SKIP_FRONTEND" != true ] && [ -d "frontend" ] && echo -e "${GREEN}  Frontend     → http://localhost:5173${NC}"
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
 echo -e "${YELLOW}  Press Ctrl+C to stop${NC}"
 echo ""
 
-# ── Wait for background processes ────────────────────────────────────────────
 wait

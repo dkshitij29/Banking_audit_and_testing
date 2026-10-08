@@ -1,6 +1,6 @@
 """Bull, Bear, and Judge debate agents."""
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent
 from agent.pipeline.deps import ResearchDeps
 from agent.config import Settings
 

@@ -1,6 +1,6 @@
 """Financial analysis agent: IS/BS/CF trends, margin health, debt load."""
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent
 from agent.pipeline.deps import ResearchDeps
 from agent.config import Settings
 from agent.agents.tools import register_tools

@@ -1,8 +1,6 @@
 """5-Stage Research Pipeline: Ingest → Parse → Analyse → Model → Synthesize."""
 
-import uuid
 from datetime import date
-from typing import Optional
 from pathlib import Path
 
 from agent.config import Settings
@@ -11,7 +9,7 @@ from agent.data.market_data import MarketDataProvider
 from agent.sec.parser import parse_filing
 from agent.sec.retriever import BM25Retriever
 from agent.sec.qa import FilingQAIgent
-from agent.valuation.wacc import calculate_wacc, estimate_debt_ratio, estimate_tax_rate
+from agent.valuation.wacc import calculate_wacc, estimate_tax_rate
 from agent.valuation.dcf import calculate_dcf
 from agent.valuation.multiples import compute_comps, render_comps_table
 from agent.valuation.peer_screen import find_peers
