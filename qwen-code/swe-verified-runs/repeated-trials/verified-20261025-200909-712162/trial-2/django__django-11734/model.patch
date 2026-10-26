@@ -1,0 +1,79 @@
+diff --git a/test_outerref_exclude.py b/test_outerref_exclude.py
+new file mode 100644
+index 0000000000..bd8037cfc6
+--- /dev/null
++++ b/test_outerref_exclude.py
+@@ -0,0 +1,73 @@
++"""Reproduction script for OuterRef in exclude() / ~Q() bug."""
++import os
++import sys
++import django
++
++os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.settings')
++sys.path.insert(0, '.')
++django.setup()
++
++from django.db.models import Exists, OuterRef, Q
++from queries.models import Number, Item, Tag, NamedCategory
++
++# Setup minimal data
++from django.db import connection
++with connection.cursor() as c:
++    c.execute("DELETE FROM queries_item")
++    c.execute("DELETE FROM queries_tag")
++    c.execute("DELETE FROM queries_namedcategory")
++    c.execute("DELETE FROM queries_number")
++
++# Create test data
++cat = NamedCategory.objects.create(name='cat1')
++tag = Tag.objects.create(name='t1', category=cat)
++num = Number.objects.create(num=1, other_num=9)
++num2 = Number.objects.create(num=2, other_num=8)
++item = Item.objects.create(
++    name='item1', created='2020-01-01 00:00:00', modified='2020-01-01 00:00:00',
++    creator__name='author1', creator__num=1, creator__extra__info='info1',
++    creator__extra__note=None
++)
++# item.tags.add(tag)
++
++# Test 1: filter() - should work
++print("Test 1: filter() with OuterRef...")
++try:
++    qs = Number.objects.annotate(
++        foo=Exists(
++            Item.objects.filter(creator__num=OuterRef('pk'))
++        )
++    ).filter(foo=True)
++    print(f"  SQL: {qs.query}")
++    print(f"  Result: {list(qs)}")
++    print("  PASS")
++except Exception as e:
++    print(f"  FAIL: {e}")
++
++# Test 2: exclude() - currently crashes
++print("\nTest 2: exclude() with OuterRef...")
++try:
++    qs = Number.objects.annotate(
++        foo=Exists(
++            Item.objects.exclude(creator__num=OuterRef('pk'))
++        )
++    ).filter(foo=True)
++    print(f"  SQL: {qs.query}")
++    print(f"  Result: {list(qs)}")
++    print("  PASS")
++except Exception as e:
++    print(f"  FAIL: {e}")
++
++# Test 3: ~Q() - currently crashes
++print("\nTest 3: ~Q() with OuterRef...")
++try:
++    qs = Number.objects.annotate(
++        foo=Exists(
++            Item.objects.filter(~Q(creator__num=OuterRef('pk')))
++        )
++    ).filter(foo=True)
++    print(f"  SQL: {qs.query}")
++    print(f"  Result: {list(qs)}")
++    print("  PASS")
++except Exception as e:
++    print(f"  FAIL: {e}")

@@ -1,0 +1,31 @@
+
+
+The fix has been applied and tested. Here's a concise summary:
+
+## Problem
+
+`_format_float()` in `astropy/io/fits/card.py` used `f"{value:.16G}"` unconditionally, which produces unnecessarily long string representations for many floats. For example, `0.009125` became `'0.009124999999999999'` (20 chars) instead of `'0.009125'` (8 chars). This forces FITS card comments to be truncated for keyword/value/comment combinations that should fit in a single 80-character FITS card line.
+
+## Fix
+
+Modified `_format_float()` in `astropy/io/fits/card.py` (line 1300) to:
+
+1. **Use `str(value)` first** — Python's `str()` produces the shortest decimal representation that round-trips correctly (e.g., `str(0.009125)` → `'0.009125'`)
+2. **Fall back to `.16G`** only if the `str()` representation fails the round-trip check or exceeds 20 characters
+
+This preserves all existing invariants:
+- All values still round-trip correctly (`float(result) == value`)
+- Results are still capped at 20 characters
+- Special values (`inf`, `-inf`, `nan`) are handled correctly
+- Exponent formatting is normalized to two-digit exponents
+
+## Test Results
+
+All manual tests pass:
+- `_format_float(0.009125)` → `'0.009125'` (was `'0.009124999999999999'`, saving 12 chars)
+- 17 test values all round-trip correctly
+- All results ≤ 20 characters
+- `inf`/`-inf`/`nan` handled without error
+- `np.float64` and `np.float32` types work correctly
+
+The full pytest suite couldn't be run because C extensions require `pip install -e .` (which fails due to a `setuptools.dep_util` incompatibility), but the pure-Python `_format_float` function has been verified in isolation using code extracted directly from the modified source file.

@@ -1,0 +1,19 @@
+
+
+Here is a concise summary of the fix:
+
+## Fix Summary
+
+**Issue:** Fields inherited from an abstract base model compared as equal across different child models because `Field.__eq__`, `__hash__`, and `__lt__` only used `creation_counter`. Since abstract model fields share the same `creation_counter` in all child classes, `B._meta.get_field('myfield') == C._meta.get_field('myfield')` returned `True`.
+
+**File changed:** `django/db/models/fields/__init__.py`
+
+**Change:** Updated the three comparison methods to include `self.model` (via `getattr(self, 'model', None)`) alongside `creation_counter`:
+
+- `__eq__`: checks both `creation_counter` AND `model`
+- `__lt__`: compares tuple `(creation_counter, model)` — creation_counter is the primary sort to preserve existing ordering
+- `__hash__`: hashes the tuple `(creation_counter, model)`
+
+`getattr` is used because standalone `Field` instances (not yet attached to a model) lack the `model` attribute.
+
+**Test results:** All 403 `model_fields` tests pass (56 skipped), including the existing `test_field_ordering` test. The exact issue scenario (`len({B._meta.get_field('myfield'), C._meta.get_field('myfield')}) == 2`) now works correctly.

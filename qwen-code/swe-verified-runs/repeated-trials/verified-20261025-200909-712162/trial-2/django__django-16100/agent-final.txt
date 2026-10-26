@@ -1,0 +1,9 @@
+
+
+**Fix applied:** Wrapped the `list_editable` bulk-edit save loop in `changelist_view` with `transaction.atomic()`.
+
+**Change in `django/contrib/admin/options.py`** (line 2013): Added `with transaction.atomic(using=router.db_for_write(self.model)):` around the `for form in formset.forms` loop that saves multiple objects. This matches the pattern already used by `changeform_view` and `delete_view` in the same file.
+
+**Why:** When processing `list_editable` POST data, multiple objects are saved in a loop. Without a transaction, a failure mid-loop (e.g., constraint violation on the second object) would leave the database in an inconsistent state with only some objects modified. Wrapping in `transaction.atomic()` ensures all-or-nothing semantics.
+
+**Test results:** All 441 `admin_views` tests pass (5 list_editable tests pass, 2 skipped; 0 failures).

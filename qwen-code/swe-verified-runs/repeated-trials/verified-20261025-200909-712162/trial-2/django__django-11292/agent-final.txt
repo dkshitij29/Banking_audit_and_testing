@@ -1,0 +1,13 @@
+
+
+The changes made to `django/core/management/base.py` are:
+
+1. **Added `--skip-checks` argument** in `create_parser()` — a `store_true` flag with `dest='skip_checks'` and help text `'Skip the checks.'`
+
+2. **Removed `'skip_checks'` from `base_stealth_options`** — it's now `'('stderr', 'stdout')'` instead of `'('skip_checks', 'stderr', 'stdout')'`
+
+3. **Added `'--skip-checks'` to `DjangoHelpFormatter.show_last`** — so it appears grouped with other common arguments in `--help` output
+
+**Behavior:**
+- From the **command line**: `--skip-checks` is available on all management commands. By default, checks still run (backwards compatible).
+- **Programmatic calls** via `call_command()`: still default to `skip_checks=True` (unchanged, per the existing logic in `__init__.py`).

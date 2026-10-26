@@ -1,0 +1,24 @@
+diff --git a/lib/matplotlib/pyplot.py b/lib/matplotlib/pyplot.py
+index 58ce4c03fa..c2a7fb1273 100644
+--- a/lib/matplotlib/pyplot.py
++++ b/lib/matplotlib/pyplot.py
+@@ -2278,9 +2278,16 @@ def set_cmap(cmap: Colormap | str) -> None:
+     matplotlib.cm.register_cmap
+     matplotlib.cm.get_cmap
+     """
+-    cmap = get_cmap(cmap)
+-
+-    rc('image', cmap=cmap.name)
++    # Preserve the original string name (the registry key) so that we store
++    # it in rcParams rather than cmap.name, which may differ from the
++    # registered name when a colormap is registered under a different name.
++    if isinstance(cmap, str):
++        cmap_name = cmap
++        cmap = get_cmap(cmap)
++    else:
++        cmap = get_cmap(cmap)
++        cmap_name = cmap.name
++    rc('image', cmap=cmap_name)
+     im = gci()
+ 
+     if im is not None:

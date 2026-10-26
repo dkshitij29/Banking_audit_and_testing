@@ -1,0 +1,25 @@
+
+
+## Summary
+
+**Bug:** `caplog.set_level()` changes both the logger level and the handler level, but `_finalize()` only restores the logger level. The handler level is never restored, so subsequent tests inherit the modified handler level from previous tests.
+
+**Fix** (2 changes in `src/_pytest/logging.py`):
+
+1. **`LogCaptureFixture.__init__`** — Added `self._initial_handler_level = None` to track the handler's original level.
+
+2. **`LogCaptureFixture.set_level`** — Save the handler's current level before modifying it:
+   ```python
+   if self._initial_handler_level is None:
+       self._initial_handler_level = self.handler.level
+   ```
+
+3. **`LogCaptureFixture._finalize`** — Restore the handler level:
+   ```python
+   if self._initial_handler_level is not None:
+       self.handler.setLevel(self._initial_handler_level)
+   ```
+
+**Test results:** All unit tests pass — handler level is correctly restored to its original value after `_finalize()`, including edge cases (no `set_level` called, multiple `set_level` calls, `set_level` with a specific logger).
+
+**Note:** Could not run `pytest` end-to-end due to pluggy version incompatibility between the old pluggy 0.13.1 required by this pytest 6.0rc branch and the available pluggy 1.x in the environment. The fix was verified via direct unit tests of `LogCaptureFixture`.

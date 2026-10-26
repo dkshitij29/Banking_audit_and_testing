@@ -1,0 +1,17 @@
+
+
+All 32 admin_filters tests pass. Here's a concise summary of the fix:
+
+## Fix Summary
+
+**Issue:** Two bugs in `django/contrib/admin/filters.py`:
+
+1. **`RelatedFieldListFilter.field_choices`** (line ~197): `ordering` was initialized to `()` and only populated if the related model had a registered ModelAdmin. If no ModelAdmin existed, the empty tuple was passed to `field.get_choices()`, ignoring the related model's `Meta.ordering`.
+
+2. **`RelatedOnlyFieldListFilter.field_choices`** (line ~421): `field.get_choices()` was called without the `ordering` kwarg at all, completely ignoring any ordering from the related model's ModelAdmin or `Meta.ordering`.
+
+**Fix applied to both methods:**
+- After checking for a ModelAdmin ordering, if ordering is still empty, fall back to `get_model_from_relation(field)._meta.ordering`
+- For `RelatedOnlyFieldListFilter`, also add the `ordering=ordering` parameter to the `field.get_choices()` call
+
+**Test results:** All 32 tests in `tests/admin_filters/tests.py` pass, including the existing `test_relatedfieldlistfilter_foreignkey_ordering` and `test_relatedfieldlistfilter_foreignkey_ordering_reverse` tests.

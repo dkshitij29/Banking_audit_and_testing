@@ -1,0 +1,27 @@
+
+
+## Summary
+
+**Problem:** The `InheritDocstrings` metaclass in `astropy/utils/misc.py` only checked `inspect.isfunction(val)`, which returns `False` for `property` objects. This meant docstrings were never inherited for properties.
+
+**Fix:** Added an `elif` branch to handle `property` objects. When a property's `__doc__` is `None`, the metaclass now looks up the property in parent classes and copies the `__doc__` from the parent's property onto the child's property.
+
+**Key insight:** For properties, you must set `val.__doc__` directly on the property object (not `val.fget.__doc__`), because `property.__doc__` is captured at creation time and is independent of `fget.__doc__` thereafter.
+
+**Change** in `astropy/utils/misc.py` (line ~532):
+
+```python
+# Before: only inspected functions
+if (inspect.isfunction(val) and
+    is_public_member(key) and
+    val.__doc__ is None):
+
+# After: handles both functions and properties
+if is_public_member(key):
+    if inspect.isfunction(val) and val.__doc__ is None:
+        ...
+    elif isinstance(val, property) and val.__doc__ is None:
+        ...
+```
+
+**Test results:** All 4 tests pass — property inheritance works, existing method inheritance is unaffected, explicit property docstrings are preserved, and private properties are correctly skipped.

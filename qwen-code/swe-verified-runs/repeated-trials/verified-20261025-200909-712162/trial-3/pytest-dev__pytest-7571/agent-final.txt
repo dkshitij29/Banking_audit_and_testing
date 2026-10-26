@@ -1,0 +1,21 @@
+
+
+All 8 tests pass. Here's a concise summary:
+
+## Fix
+
+**File:** `src/_pytest/logging.py`
+
+**Bug:** `LogCaptureFixture.set_level()` calls `self.handler.setLevel(level)` but never saves or restores the handler's original level. Meanwhile, the logger's level is properly saved/restored via `_initial_logger_levels` / `_finalize()`. This causes the handler's level change to persist across tests.
+
+**Changes (2 small edits):**
+
+1. **`__init__`** — Added `self._initial_handler_level = None` to track the handler's original level.
+
+2. **`set_level`** — Before modifying the handler level, save it: `if self._initial_handler_level is None: self._initial_handler_level = self.handler.level`
+
+3. **`_finalize`** — After restoring logger levels, restore the handler level: `if self._initial_handler_level is not None: self.handler.setLevel(self._initial_handler_level)`
+
+The fix mirrors the existing logger-level save/restore pattern, extending it to the handler as well. Using `setdefault`-like semantics (only saving once) ensures the first call captures the original value, even if `set_level` is called multiple times within a single test.
+
+**Test results:** 8/8 reproduction tests pass. The 9 non-subprocess logging fixture tests also pass; 5 failures in `test_fixture.py` are due to a Python 3.11 vs pytest 6.0 assertion rewriting incompatibility (environmental, not a regression).

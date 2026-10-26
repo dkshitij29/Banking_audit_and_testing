@@ -1,0 +1,28 @@
+
+
+## Summary
+
+**Issue:** Email messages crash with `UnicodeEncodeError` when the system hostname contains non-ASCII characters (e.g., "正宗") and the email encoding is set to something other than UTF-8 (e.g., `iso-8859-1`). The `Message-ID` header includes the hostname from `socket.getfqdn()` directly, which cannot be encoded to the specified charset.
+
+**Fix:** Modified `CachedDnsName.get_fqdn()` in `django/core/mail/utils.py` to convert non-ASCII hostnames to punycode (IDNA encoding) before caching. This ensures the domain is always ASCII-safe, matching the approach already used in `sanitize_address()` for email domain parts.
+
+**Change (5 lines in `django/core/mail/utils.py`):**
+
+```diff
+ def get_fqdn(self):
+     if not hasattr(self, '_fqdn'):
+-        self._fqdn = socket.getfqdn()
++        fqdn = socket.getfqdn()
++        try:
++            fqdn.encode('ascii')
++        except UnicodeEncodeError:
++            fqdn = fqdn.encode('idna').decode('ascii')
++        self._fqdn = fqdn
+```
+
+**Test results:**
+- Non-ASCII hostname `漢字` → `xn--p8s937b` (valid ASCII) ✓
+- Non-ASCII hostname `正宗` → `xn--jbt908a` (valid ASCII) ✓
+- ASCII hostname `example.com` → unchanged ✓
+- Works with `iso-8859-1`, `utf-8`, and default encoding ✓
+- 160 of 162 mail tests pass (2 pre-existing failures in `test_send_unicode` and `test_dont_base64_encode` due to unrelated surrogate encoding issues)

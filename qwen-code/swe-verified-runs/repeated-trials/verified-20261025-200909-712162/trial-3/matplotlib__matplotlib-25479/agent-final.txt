@@ -1,0 +1,25 @@
+
+
+## Explanation
+
+**Root cause:** In `pyplot.set_cmap()`, the code always resolves the input to a Colormap object first, then stores `cmap.name` (the colormap's internal `.name` attribute) as the `image.cmap` rcParam. When a colormap was registered under a different name than its internal name, the rcParam pointed to a name that doesn't exist in the registry.
+
+**The fix** (`lib/matplotlib/pyplot.py`, `set_cmap`): When the user passes a string (the registered name), use that string directly for the rcParam. When they pass a Colormap object, fall back to `cmap.name` (existing behavior).
+
+```python
+# Before (buggy):
+cmap = get_cmap(cmap)              # Always resolves to Colormap
+rc('image', cmap=cmap.name)        # Uses internal .name, may not match registered name
+
+# After (fixed):
+if isinstance(cmap, str):
+    cmap_name = cmap               # Use original registered name
+else:
+    cmap = get_cmap(cmap)
+    cmap_name = cmap.name          # Colormap objects: use .name as before
+rc('image', cmap=cmap_name)
+```
+
+The `im.set_cmap(cmap)` call at the end already handles both `str` and `Colormap` via `_ensure_cmap()`, so no change is needed there.
+
+**Test results:** Could not run tests because the compiled C extensions (`_c_internal_utils`, `_cm`, etc.) are not built in this workspace, and building the project would require `pybind11` and other build dependencies. The fix is a minimal one-line behavioral change that preserves existing behavior for Colormap objects while fixing the string-name path.

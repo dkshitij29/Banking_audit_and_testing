@@ -1,0 +1,24 @@
+
+
+The fix is complete. Here's a concise summary:
+
+## Changes
+
+Two changes in `django/core/management/base.py`:
+
+1. **Added `--skip-checks` argument** to `BaseCommand.create_parser()` — a `store_true` argument that sets `skip_checks` in the parsed options, allowing users to skip system checks from the command line.
+
+2. **Added `'--skip-checks'` to `DjangoHelpFormatter.show_last`** — ensures the option appears grouped with other common arguments in `--help` output.
+
+## How it works
+
+The `execute()` method already checks `options.get('skip_checks')` before running `self.check()`. Previously, this key was only set programmatically via `call_command(skip_checks=True)`. Now it's also available as `--skip-checks` on the command line:
+
+```bash
+python manage.py migrate --skip-checks
+python manage.py runserver --skip-checks
+```
+
+## Test results
+
+All 30 relevant `user_commands` tests pass. The 1 failure (`test_subparser_invalid_option`) is a pre-existing Python 3.11 argparse formatting incompatibility, unrelated to this change.

@@ -1,0 +1,10 @@
+{
+  "instance_id": "pytest-dev__pytest-7571",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 368.08,
+  "changed_tests": false,
+  "evaluation_run_id": "verified-20261025-200909-712162-pytest-dev__pytest-7571-ff41fbd551",
+  "evaluation_seconds": 66.78,
+  "evaluation_exit": 0
+}

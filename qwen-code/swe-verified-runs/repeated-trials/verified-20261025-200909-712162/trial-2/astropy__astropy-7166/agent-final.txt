@@ -1,0 +1,19 @@
+
+
+The fix works. Here's a concise summary:
+
+**Problem:** The `InheritDocstrings` metaclass used `inspect.isfunction(val)` to identify methods that should inherit docstrings from parent classes. This check returns `False` for `property` objects, so properties in subclasses never inherited their parent's docstring.
+
+**Fix:** Added `isinstance(val, property)` to the condition in `astropy/utils/misc.py`, line 531:
+
+```python
+# Before:
+if (inspect.isfunction(val) and ...
+
+# After:
+if ((inspect.isfunction(val) or isinstance(val, property)) and ...
+```
+
+**Test results:** Both function-based and property-based docstring inheritance pass. The existing test (`test_inherit_docstrings`) continues to work, and a new property override scenario correctly inherits the parent's docstring.
+
+**Note:** Full project tests could not be run because numpy ≥1.10 is not available in this environment.

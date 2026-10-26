@@ -1,0 +1,21 @@
+
+
+## Summary
+
+**Problem:** When a system hostname contains non-ASCII characters (e.g., `正宗`), creating an email message with a non-UTF-8 encoding (e.g., `iso-8859-1`) crashes because the `Message-ID` header contains the raw Unicode hostname, which can't be encoded in the specified charset.
+
+**Fix:** In `django/core/mail/message.py`, before passing the hostname to `make_msgid()`, check if it's ASCII. If not, convert it to ASCII-compatible punycode via IDNA encoding (`domain.encode('idna').decode('ascii')`).
+
+**Changed code** (line 260-265 of `message.py`):
+```python
+        if 'message-id' not in header_names:
+            # Use cached DNS_NAME for performance
+            domain = str(DNS_NAME)
+            try:
+                domain.encode('ascii')
+            except UnicodeEncodeError:
+                domain = domain.encode('idna').decode('ascii')
+            msg['Message-ID'] = make_msgid(domain=domain)
+```
+
+**Test results:** 160 of 162 mail tests pass. The 2 failures (`test_dont_base64_encode` and `test_send_unicode`) are pre-existing surrogate-character encoding bugs unrelated to this fix.

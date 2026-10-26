@@ -1,0 +1,6 @@
+Fix the issue below. Inspect code and make the smallest appropriate fix. Do not commit, modify or delete existing tests, fetch upstream fixes, or read outside this workspace or benchmark data. Run relevant tests if possible. You are in a host checkout, not a prepared benchmark container. If compiled extensions or dependencies are missing, report that limitation; do not spend the attempt rebuilding the whole project or installing into global environments. Finish with a concise explanation and test results.
+
+Add transaction handling to Changelist list_editable processing.
+Description
+	
+It seems that changelist_view in Django admin is missing a transaction. Since the view may change data in database, it should be wrapped in a transaction to prevent unexpected states in case of errors.

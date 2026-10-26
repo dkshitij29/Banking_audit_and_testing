@@ -1,0 +1,4 @@
+Fix the issue below. Inspect code and make the smallest appropriate fix. Do not commit, modify or delete existing tests, fetch upstream fixes, or read outside this workspace or benchmark data. Run relevant tests if possible. You are in a host checkout, not a prepared benchmark container. If compiled extensions or dependencies are missing, report that limitation; do not spend the attempt rebuilding the whole project or installing into global environments. Finish with a concise explanation and test results.
+
+InheritDocstrings metaclass doesn't work for properties
+Inside the InheritDocstrings metaclass it uses `inspect.isfunction` which returns `False` for properties.

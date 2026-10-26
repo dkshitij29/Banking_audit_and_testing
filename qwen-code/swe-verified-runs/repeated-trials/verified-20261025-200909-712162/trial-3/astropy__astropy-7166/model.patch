@@ -1,0 +1,32 @@
+diff --git a/astropy/utils/misc.py b/astropy/utils/misc.py
+index de3fb01d18..e6da2afa8f 100644
+--- a/astropy/utils/misc.py
++++ b/astropy/utils/misc.py
+@@ -528,14 +528,19 @@ class InheritDocstrings(type):
+                 not key.startswith('_'))
+ 
+         for key, val in dct.items():
+-            if (inspect.isfunction(val) and
+-                is_public_member(key) and
+-                val.__doc__ is None):
+-                for base in cls.__mro__[1:]:
+-                    super_method = getattr(base, key, None)
+-                    if super_method is not None:
+-                        val.__doc__ = super_method.__doc__
+-                        break
++            if is_public_member(key):
++                if inspect.isfunction(val) and val.__doc__ is None:
++                    for base in cls.__mro__[1:]:
++                        super_method = getattr(base, key, None)
++                        if super_method is not None:
++                            val.__doc__ = super_method.__doc__
++                            break
++                elif isinstance(val, property) and val.__doc__ is None:
++                    for base in cls.__mro__[1:]:
++                        super_method = getattr(base, key, None)
++                        if super_method is not None:
++                            val.__doc__ = super_method.__doc__
++                            break
+ 
+         super().__init__(name, bases, dct)
+ 

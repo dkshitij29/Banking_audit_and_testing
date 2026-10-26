@@ -1,0 +1,19 @@
+
+
+## Fix Summary
+
+**File changed:** `django/db/migrations/serializer.py`
+
+**Problem:** `TypeSerializer.serialize()` used `self.value.__name__` which returns only the class name without its nesting context. For an inner class like `Outer.Inner`, `__name__` is `"Inner"`, so the generated migration path was `test1.models.Inner` instead of `test1.models.Outer.Inner`.
+
+**Fix:** Replaced `self.value.__name__` with `self.value.__qualname__` (2 occurrences, lines 269 and 271). `__qualname__` returns the fully qualified name including outer class scope (e.g., `"Outer.Inner"`), while for top-level classes it equals `__name__`, so there's no regression.
+
+**Result:**
+| Class type | Before | After |
+|---|---|---|
+| `Outer.Inner` | `module.Inner` ❌ | `module.Outer.Inner` ✅ |
+| `Thing.State` | `module.State` ❌ | `module.Thing.State` ✅ |
+| `TopLevel` | `module.TopLevel` ✅ | `module.TopLevel` ✅ |
+| `int` (builtin) | `int` ✅ | `int` ✅ |
+
+**Note:** Could not run Django's test suite — project dependencies (`asgiref`, etc.) are not installed in this workspace. The fix was verified with a standalone Python script.

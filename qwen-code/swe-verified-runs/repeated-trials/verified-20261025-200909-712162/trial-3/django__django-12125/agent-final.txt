@@ -1,0 +1,14 @@
+
+
+**Fix applied.** The bug was in `django/db/migrations/serializer.py` — `TypeSerializer.serialize()` used `self.value.__name__` instead of `self.value.__qualname__`, so nested/inner classes were serialized without their outer class prefix.
+
+**Change** (`django/db/migrations/serializer.py`):
+```diff
+-                return self.value.__name__, set()
++                return self.value.__qualname__, set()
+...
+-                return "%s.%s" % (module, self.value.__name__), {"import %s" % module}
++                return "%s.%s" % (module, self.value.__qualname__), {"import %s" % module}
+```
+
+**Test results:** Standalone unit test passed — `Outer.Inner` now serializes as `__main__.Outer.Inner` instead of `__main__.Inner`; builtin types (e.g. `int`) and `type(None)` remain unchanged. Full Django test suite could not run due to missing `asgiref` in the project's virtual environment (host environment limitation; no changes made to global dependencies).

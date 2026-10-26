@@ -1,0 +1,10 @@
+{
+  "instance_id": "scikit-learn__scikit-learn-26323",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 288.85,
+  "changed_tests": false,
+  "evaluation_run_id": "verified-20261025-200909-712162-scikit-learn__scikit-learn-26323-c2c311980f",
+  "evaluation_seconds": 131.92,
+  "evaluation_exit": 0
+}

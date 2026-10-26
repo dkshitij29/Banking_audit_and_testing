@@ -1,0 +1,12 @@
+
+
+All test failures are pre-existing (dependency compatibility issues in the venv). My change introduces no regressions.
+
+**Explanation:** The bug is in `coerce_pandas_values()` in `xarray/core/merge.py`. When `Dataset.merge()` is called with a `DataArray` argument, the flow goes through `dataset_merge_method()` → `merge_core()` → `coerce_pandas_values()`. The function only handled `Dataset` objects and mappings (dicts), but not bare `DataArray` objects — causing it to call `.items()` on a `DataArray`, which doesn't have that method.
+
+The fix adds an `elif isinstance(obj, DataArray)` branch that converts the `DataArray` to a `Dataset` via `.to_dataset()`, matching what the top-level `xr.merge()` already does. This is a 2-line change.
+
+**Test results:**
+- Manual test: `ds.merge(da)` now produces identical output to `xr.merge([ds, da])` ✓
+- All 15 merge tests that pass on the original code continue to pass ✓
+- The 6 failing tests (`test_merge_no_conflicts_single_var`, `test_merge_auto_align`, `test_merge_fill_value[*]`, `test_merge_no_conflicts`) are pre-existing failures due to dependency version incompatibility — they fail both before and after the fix.

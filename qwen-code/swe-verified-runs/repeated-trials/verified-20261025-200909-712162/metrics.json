@@ -1,0 +1,33 @@
+{
+  "cases": 20,
+  "planned_attempts": 60,
+  "finished_attempts": 60,
+  "complete": true,
+  "status_counts": {
+    "unresolved": 19,
+    "empty_patch": 5,
+    "resolved": 36
+  },
+  "successful_attempts_so_far": 36,
+  "avg_score_percent": 60.0,
+  "pass_at_3_percent": 70.0,
+  "pass_power_3_percent": 40.0,
+  "pass_rate_percent": 70.0,
+  "pass_rate_definition": "Alias of empirical pass@3 (at least one success); source definition unverified.",
+  "definitions": {
+    "avg_score": "successful attempts / (3 * cases)",
+    "pass@3": "cases with at least one success / cases",
+    "pass^3": "cases with three successes / cases"
+  },
+  "usage": {
+    "input_tokens": 58198588,
+    "output_tokens": 586456,
+    "available_attempts": 53
+  },
+  "trial_paths": [
+    "/home/mahesh/DAT/swe-verified-runs/batches/verified-20261025-200909-712162",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/verified-20261025-200909-712162/trial-2",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/verified-20261025-200909-712162/trial-3"
+  ],
+  "limitations": "Host generation, Docker evaluation. Fresh workspaces/sessions; shared Qwen settings or memory may affect independence. No explicit sampling or reasoning settings enforced. Terminal failures count as unsuccessful; inspect infrastructure errors separately."
+}

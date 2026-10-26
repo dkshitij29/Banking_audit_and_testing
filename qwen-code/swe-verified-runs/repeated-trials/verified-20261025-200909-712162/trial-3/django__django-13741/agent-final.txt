@@ -1,0 +1,35 @@
+
+
+All tests pass. Here's a concise summary:
+
+## Fix
+
+**File:** `django/contrib/auth/forms.py` — `ReadOnlyPasswordHashField.__init__`
+
+**Change:** Added `kwargs.setdefault("disabled", True)` so the field is disabled by default.
+
+```python
+def __init__(self, *args, **kwargs):
+    kwargs.setdefault("required", False)
+    kwargs.setdefault("disabled", True)  # <-- added
+    super().__init__(*args, **kwargs)
+```
+
+## Why it works
+
+When a `forms.Field` has `disabled=True`, Django's field `clean()` method ignores any submitted data and uses the value from `initial` instead. This means:
+
+1. A user tampering with the submitted password value has no effect — the initial value is always used
+2. `UserChangeForm.clean_password()` becomes redundant (the field-level behavior replaces the form-level override)
+3. Custom forms using `ReadOnlyPasswordHashField` no longer need to implement `clean_password` — eliminating a documented pitfall
+4. The `disabled` attribute can still be overridden to `False` if needed
+
+## Test results
+
+All 6 inline tests passed:
+- `disabled=True` by default
+- `has_changed()` still returns `False`
+- `bound_data()` still returns initial
+- `disabled` can be overridden explicitly
+- `required=False` by default (unchanged)
+- A disabled field in a form uses the initial value, ignoring submitted data

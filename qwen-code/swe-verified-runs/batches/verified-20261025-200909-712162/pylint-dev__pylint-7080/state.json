@@ -1,0 +1,10 @@
+{
+  "instance_id": "pylint-dev__pylint-7080",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 386.42,
+  "changed_tests": false,
+  "evaluation_run_id": "verified-20261025-200909-712162-pylint-dev__pylint-7080-ac81e33e12",
+  "evaluation_seconds": 107.51,
+  "evaluation_exit": 0
+}

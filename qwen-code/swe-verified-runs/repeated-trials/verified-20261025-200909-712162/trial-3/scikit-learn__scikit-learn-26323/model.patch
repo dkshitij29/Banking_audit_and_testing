@@ -1,0 +1,52 @@
+diff --git a/sklearn/compose/_column_transformer.py b/sklearn/compose/_column_transformer.py
+index 4eddd12b1b..3a89f0d63b 100644
+--- a/sklearn/compose/_column_transformer.py
++++ b/sklearn/compose/_column_transformer.py
+@@ -303,6 +303,9 @@ class ColumnTransformer(TransformerMixin, _BaseComposition):
+         for trans in transformers:
+             _safe_set_output(trans, transform=transform)
+ 
++        if self.remainder not in {"passthrough", "drop"}:
++            _safe_set_output(self.remainder, transform=transform)
++
+         return self
+ 
+     def get_params(self, deep=True):
+diff --git a/test_issue_repro.py b/test_issue_repro.py
+new file mode 100644
+index 0000000000..4cf6c9bded
+--- /dev/null
++++ b/test_issue_repro.py
+@@ -0,0 +1,32 @@
++import pandas as pd
++import numpy as np
++from sklearn.compose import make_column_selector, make_column_transformer
++from sklearn.feature_selection import VarianceThreshold
++
++df = pd.DataFrame({"a": [True, False, True], "b": [1, 2, 3]})
++
++out1 = make_column_transformer(
++    (VarianceThreshold(), make_column_selector(dtype_include=bool)),
++    remainder=VarianceThreshold(),
++    verbose_feature_names_out=False,
++).set_output(transform="pandas").fit_transform(df)
++print("out1 (remainder=VarianceThreshold):")
++print(out1)
++print(f"type: {type(out1)}")
++print()
++
++out2 = make_column_transformer(
++    (VarianceThreshold(), make_column_selector(dtype_include=bool)),
++    (VarianceThreshold(), make_column_selector(dtype_exclude=bool)),
++    verbose_feature_names_out=False,
++).set_output(transform="pandas").fit_transform(df)
++print("out2 (explicit transformers):")
++print(out2)
++print(f"type: {type(out2)}")
++print()
++
++# They should produce the same output
++assert isinstance(out1, pd.DataFrame), f"out1 should be DataFrame, got {type(out1)}"
++assert isinstance(out2, pd.DataFrame), f"out2 should be DataFrame, got {type(out2)}"
++assert np.allclose(out1.values, out2.values), f"out1 and out2 should be equal:\nout1={out1.values}\nout2={out2.values}"
++print("PASS: both outputs are DataFrames with matching values")

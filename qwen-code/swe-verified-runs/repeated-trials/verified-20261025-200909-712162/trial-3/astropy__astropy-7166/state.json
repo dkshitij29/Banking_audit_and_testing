@@ -1,0 +1,12 @@
+{
+  "instance_id": "astropy__astropy-7166",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 337.65,
+  "input_tokens": 468252,
+  "output_tokens": 10054,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-23f11ffcc9-astropy__astropy-7166-7e1a8db374",
+  "evaluation_seconds": 30.01,
+  "evaluation_exit": 0
+}

@@ -1,0 +1,13 @@
+
+
+## Explanation
+
+**Root cause:** In `_discover_files()` (`pylint/lint/pylinter.py`), when walking non-package directories, individual `.py` files were yielded via a generator expression **without** checking `ignore_paths`. The `_is_ignored_file()` check was only applied to directory roots, not to the individual files inside them.
+
+**Fix:** Changed the `yield from` generator expression to an explicit loop that checks each `.py` file against `_is_ignored_file()` before yielding it — the same check already applied to directories.
+
+**Changed file:** `pylint/lint/pylinter.py` (lines 609–621)
+
+**Test results:**
+- ✅ All 3 existing `ignore-*_recursive` tests pass (`test_ignore_path_recursive`, `test_ignore_recursive`, `test_ignore_pattern_recursive`)
+- ✅ All 3 new regression tests pass (filtering files in non-package dirs, anchored patterns, package dirs)

@@ -1,0 +1,30 @@
+
+
+The fix for the Django `MultiValueField` issue is complete and verified. Here's a summary:
+
+**Problem:** `MultiValueField.clean()` had an early return when all submitted values were empty and the field itself was `required=False`. This bypassed the per-field `required` checks, so a sub-field marked as `required=True` would be silently ignored when all values were empty.
+
+**Fix:** In `django/forms/fields.py`, changed the early return condition:
+
+```python
+# Before (buggy)
+elif not value or not [v for v in value if v not in self.empty_values]:
+    if self.required:
+        raise ValidationError(...)
+    else:
+        return self.compress([])  # Skips per-field required checks
+
+# After (fixed)  
+elif not value or not [v for v in value if v not in self.empty_values]:
+    if self.required:
+        raise ValidationError(...)
+    elif not any(field.required for field in self.fields):
+        return self.compress([])  # Only skip if NO sub-fields are required
+```
+
+**Test results (all passed):**
+- Both empty + sub-field required → `False` ✓ (was incorrectly `True`)
+- First filled + second empty → `False` ✓
+- Both filled → `True` ✓
+- All fields optional + all empty → `True` ✓
+- MVField required + all empty → `False` ✓

@@ -1,0 +1,16 @@
+diff --git a/sympy/printing/pycode.py b/sympy/printing/pycode.py
+index a3f0310735..5667960f5b 100644
+--- a/sympy/printing/pycode.py
++++ b/sympy/printing/pycode.py
+@@ -347,6 +347,11 @@ def _print_NoneToken(self, arg):
+         return 'None'
+ 
+ 
++    def _print_Indexed(self, expr):
++        base, *indices = expr.args
++        return "{}[{}]".format(str(base), ", ".join([self._print(ind) for ind in indices]))
++
++
+ class PythonCodePrinter(AbstractPythonCodePrinter):
+ 
+     def _print_sign(self, e):

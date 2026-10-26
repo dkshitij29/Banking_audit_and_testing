@@ -1,0 +1,20 @@
+
+
+## Fix Applied
+
+**File modified:** `django/db/models/fields/__init__.py`
+
+**Problem:** When an abstract model defines a field, that field is deepcopied to each concrete child model. The `creation_counter` is preserved during deepcopy, so `B._meta.get_field('myfield')` and `C._meta.get_field('myfield')` compared as equal — causing unexpected set deduplication.
+
+**Fix:** Updated `__eq__`, `__hash__`, and `__lt__` to consider the `model` attribute in addition to `creation_counter`:
+
+- **`__eq__`**: Two fields are equal only if both `creation_counter` AND `model` match (using `getattr(self, 'model', None)` to handle fields not yet attached to a model).
+- **`__hash__`**: Hash includes both `model` and `creation_counter`.
+- **`__lt__`**: Primary sort by `creation_counter`, secondary by `id(model)` when counters are equal. Uses `id()` to avoid `ModelBase` comparison errors.
+
+**Test results:**
+- Manual issue reproduction test: **PASSED** (fields from different models no longer deduplicate)
+- `model_fields` tests (403 tests): **PASSED**
+- `migrations` tests (561 tests): **PASSED**
+- `migrations.test_state.test_fields_ordering_equality`: **PASSED**
+- Edge case (fields without `model` attribute, e.g., aggregation): **PASSED**
