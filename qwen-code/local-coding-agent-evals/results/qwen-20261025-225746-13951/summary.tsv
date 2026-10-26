@@ -1,0 +1,6 @@
+TASK	AGENT_EXIT	TESTS	FINAL_ANSWER	ARTIFACTS
+problem-01-tokenizer-regression	0	PASS	PRESENT	/home/mahesh/DAT/local-coding-agent-evals/agent-problem-pack/runs/problem-01-tokenizer-regression/qwen-20261025-225746-13951/artifacts
+problem-02-shell-command-injection	0	PASS	PRESENT	/home/mahesh/DAT/local-coding-agent-evals/agent-problem-pack/runs/problem-02-shell-command-injection/qwen-20261025-225746-13951/artifacts
+problem-03-cross-platform-task-path	0	PASS	PRESENT	/home/mahesh/DAT/local-coding-agent-evals/agent-problem-pack/runs/problem-03-cross-platform-task-path/qwen-20261025-225746-13951/artifacts
+problem-04-import-error-after-refactor	0	PASS	PRESENT	/home/mahesh/DAT/local-coding-agent-evals/agent-problem-pack/runs/problem-04-import-error-after-refactor/qwen-20261025-225746-13951/artifacts
+problem-05-mutable-default-cache	0	PASS	PRESENT	/home/mahesh/DAT/local-coding-agent-evals/agent-problem-pack/runs/problem-05-mutable-default-cache/qwen-20261025-225746-13951/artifacts

@@ -1,0 +1,15 @@
+
+
+The fix has already been applied and verified. To summarize:
+
+**Bug:** In `astropy/nddata/mixins/ndarithmetic.py`, the `_arithmetic_mask` method was missing a case for when `self.mask is not None` but `operand.mask is None`. This caused the code to fall through to the `else` branch, calling `handle_mask(self.mask, operand.mask)` with `operand.mask` being `None`, which triggered `TypeError` for `np.bitwise_or`.
+
+**Fix:** Added an `elif operand.mask is None` branch that returns `deepcopy(self.mask)`, mirroring the existing pattern for when `self.mask is None` (which returns `deepcopy(operand.mask)`).
+
+**Test results:** All 6 reproduction cases from the issue pass:
+- `nref_nomask.multiply(1.)` → `None` ✓
+- `nref_nomask.multiply(nref_nomask)` → `None` ✓  
+- `nref_mask.multiply(1.)` → copies mask ✓
+- `nref_mask.multiply(nref_mask)` → mask | mask ✓
+- `nref_mask.multiply(nref_nomask)` → copies mask ✓ (was `TypeError`)
+- `nref_nomask.multiply(nref_mask)` → copies mask ✓

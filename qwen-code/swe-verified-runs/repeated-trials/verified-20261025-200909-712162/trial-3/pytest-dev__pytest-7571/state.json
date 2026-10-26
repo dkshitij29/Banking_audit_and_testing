@@ -1,0 +1,12 @@
+{
+  "instance_id": "pytest-dev__pytest-7571",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 430.44,
+  "input_tokens": 1334824,
+  "output_tokens": 10043,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-23f11ffcc9-pytest-dev__pytest-7571-e5019e807d",
+  "evaluation_seconds": 30.92,
+  "evaluation_exit": 0
+}

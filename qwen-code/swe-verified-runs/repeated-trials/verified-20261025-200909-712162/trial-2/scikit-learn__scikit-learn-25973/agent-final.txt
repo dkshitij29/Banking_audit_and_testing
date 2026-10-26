@@ -1,0 +1,15 @@
+
+
+## Summary
+
+**Bug:** When passing an iterable of splits (e.g., `cv.split(X, y, groups=groups)` generator) to `SequentialFeatureSelector`, the generator gets consumed on the first call to `cross_val_score` in `_get_best_new_feature_score`. Subsequent calls receive an exhausted iterator, causing an `IndexError: list index out of range`.
+
+**Fix:** Added two imports (`check_cv` and `is_classifier`), then call `check_cv()` once in `fit()` to normalize the `cv` parameter before repeated use. The normalized `cv` is then passed to `_get_best_new_feature_score`, which uses it instead of `self.cv`. This matches the exact same pattern used by `RFECV` in `sklearn/feature_selection/_rfe.py`.
+
+**Changes in `_sequential.py`:**
+1. Added imports: `from ..model_selection._split import check_cv` and `from ..base import is_classifier`
+2. In `fit()`: Added `cv = check_cv(self.cv, y, classifier=is_classifier(self.estimator))` after `self._validate_params()`
+3. Pass `cv` to `_get_best_new_feature_score(...)` instead of relying on `self.cv`
+4. Updated `_get_best_new_feature_score` signature to accept `cv` and use it in `cross_val_score()`
+
+**Build limitation:** The workspace's scikit-learn cannot be built (Cython compilation failure), so tests couldn't be run against the workspace source. Verified against system sklearn 1.9.1 which already contains this fix using the same approach.

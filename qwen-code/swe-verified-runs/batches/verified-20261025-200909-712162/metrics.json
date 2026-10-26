@@ -1,0 +1,20 @@
+{
+  "selected": 20,
+  "resolved": 10,
+  "resolved_percent": 50.0,
+  "status_counts": {
+    "unresolved": 8,
+    "empty_patch": 2,
+    "resolved": 10
+  },
+  "agent_seconds": 10075.94,
+  "evaluation_seconds": 1722.37,
+  "input_tokens_reported": 0,
+  "output_tokens_reported": 0,
+  "usage_available_for": 0,
+  "agent_timeouts": 2,
+  "agent_nonzero_exits": 2,
+  "issues_with_test_changes": 1,
+  "environment": "host checkout generation; Docker official evaluation",
+  "notes": "Subset result, not full Verified score. Reported usage may include harness auxiliary calls."
+}

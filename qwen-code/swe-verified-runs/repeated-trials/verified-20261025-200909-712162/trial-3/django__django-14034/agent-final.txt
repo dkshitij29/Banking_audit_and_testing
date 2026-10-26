@@ -1,0 +1,24 @@
+
+
+All 208 field tests pass (0 failures). Here's a concise summary:
+
+## Fix
+
+**File:** `django/forms/fields.py` — `MultiValueField.clean()`
+
+**Problem:** When all sub-field values are empty and `MultiValueField.required` is `False`, the method returns `self.compress([])` immediately — bypassing the per-field `required` check. This means a sub-field with `required=True` is silently ignored when all values happen to be empty.
+
+**Root cause:** The early-return at the "all empty" check only looked at `self.required`, not at individual `field.required` on sub-fields.
+
+**Fix:** Added a guard clause between the `self.required` check and the `return self.compress([])` path:
+
+```python
+elif not self.require_all_fields and any(
+    field.required for field in self.fields
+):
+    raise ValidationError(
+        self.error_messages['incomplete'], code='incomplete'
+    )
+```
+
+This ensures that when `require_all_fields=False` (which is the mode where individual sub-field `required` settings matter), any sub-field with `required=True` still triggers an error when all values are empty. The error uses the `'incomplete'` message (same as the existing per-field path), so the behavior is consistent.

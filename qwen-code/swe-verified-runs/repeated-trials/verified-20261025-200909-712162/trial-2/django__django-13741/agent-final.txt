@@ -1,0 +1,5 @@
+
+
+**Explanation:** Added `kwargs.setdefault("disabled", True)` to `ReadOnlyPasswordHashField.__init__()` in `django/contrib/auth/forms.py`. Setting `disabled=True` on a `forms.Field` causes Django to ignore any submitted value in favor of the initial data, which is the exact behavior that `UserChangeForm.clean_password()` manually implements. This makes `clean_password()` redundant for the built-in `UserChangeForm`, and more importantly, protects users who create custom forms using `ReadOnlyPasswordHashField` from accidentally allowing password modifications when they forget to implement `clean_password()`.
+
+**Test results:** All 14 relevant tests pass (`ReadOnlyPasswordHashTest` — 3 tests; `UserChangeFormTest` — 11 tests).

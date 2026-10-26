@@ -1,0 +1,10 @@
+{
+  "instance_id": "django__django-13417",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 558.32,
+  "changed_tests": true,
+  "evaluation_run_id": "verified-20261025-200909-712162-django__django-13417-8902441f03",
+  "evaluation_seconds": 44.61,
+  "evaluation_exit": 0
+}

@@ -1,0 +1,10 @@
+{
+  "instance_id": "pydata__xarray-3677",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 410.07,
+  "changed_tests": false,
+  "evaluation_run_id": "verified-20261025-200909-712162-pydata__xarray-3677-056109e9fe",
+  "evaluation_seconds": 161.11,
+  "evaluation_exit": 0
+}

@@ -1,0 +1,7 @@
+Completed attempts: 60/60
+Version / model: see original batch versions.txt and manifest.json
+Avg Score: 60.0% (36/60)
+Pass Rate (= pass@3 here): 70.0% (14/20)
+pass@3: 70.0%
+pass^3: 40.0% (8/20)
+Reports: /home/mahesh/DAT/swe-verified-runs/repeated-trials/verified-20261025-200909-712162

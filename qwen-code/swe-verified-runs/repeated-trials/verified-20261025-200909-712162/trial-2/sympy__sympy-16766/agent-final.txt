@@ -1,0 +1,21 @@
+
+
+The fix is complete. Here's a summary:
+
+**Issue:** `PythonCodePrinter` didn't support `Indexed` objects, producing a `# Not supported in Python` warning instead of valid Python code.
+
+**Fix:** Added a `_print_Indexed` method to `PythonCodePrinter` in `sympy/printing/pycode.py`:
+
+```python
+def _print_Indexed(self, expr):
+    base, *index = expr.args
+    return "{}[{}]".format(str(base), ", ".join([self._print(ind) for ind in index]))
+```
+
+**Results:**
+- `pycode(p[0])` → `'p[0]'` (was producing a "Not supported" comment)
+- `pycode(A[i, j])` → `'A[i, j]'`
+- `pycode(A[i, j, k])` → `'A[i, j, k]'`
+- `pycode(p[0] + 1)` → `'p[0] + 1]'`
+
+All existing `test_pycode.py` tests pass with no regressions.

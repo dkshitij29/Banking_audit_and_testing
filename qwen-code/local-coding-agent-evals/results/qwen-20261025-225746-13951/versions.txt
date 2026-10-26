@@ -1,0 +1,6 @@
+run=qwen-20261025-225746-13951
+model=Qwen3.6-27B
+endpoint=http://127.0.0.1:9000/v1
+cli=/home/mahesh/DAT/qwen-code-release/scripts/cli-entry.js
+030184a3a4c2a55a9573f5ceb498f91725b68c4f
+0.25.3

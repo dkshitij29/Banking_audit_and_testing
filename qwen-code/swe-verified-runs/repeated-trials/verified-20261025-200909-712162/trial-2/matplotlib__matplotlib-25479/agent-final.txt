@@ -1,0 +1,13 @@
+
+
+## Summary
+
+**Bug:** `pyplot.set_cmap()` stores `cmap.name` (the colormap's internal name) in `rcParams['image.cmap']` instead of the registered name. When a colormap is registered under a different name than its internal `.name` attribute, subsequent calls like `plt.imshow()` fail because they look up the internal name, which isn't in the registry.
+
+**Root cause:** In `pyplot.set_cmap()`, after resolving the colormap via `get_cmap()`, the code used `cmap.name` to set the rcParam. But `cmap.name` is the colormap object's own name (e.g., `'some_cmap_name'`), not the registry key (e.g., `'my_cmap_name'`).
+
+**Fix** (`lib/matplotlib/pyplot.py`): When the user passes a string (the registry key), store that original string in rcParams instead of `cmap.name`. When the user passes a `Colormap` instance, continue using `cmap.name` as before.
+
+**Verification:**
+- Manual test reproducing the exact issue from the bug report passes — `plt.imshow()` works after `plt.set_cmap('my_cmap_name')` with a colormap registered under a different name
+- Existing tests `test_register_cmap` and `test_colormaps_get_cmap` pass

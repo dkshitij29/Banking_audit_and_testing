@@ -1,0 +1,9 @@
+
+
+**Fix applied to `django/contrib/admin/options.py`**
+
+The `changelist_view` method's `list_editable` POST processing was saving multiple objects in a loop without a transaction wrapper. If an error occurred mid-loop (e.g., during `save_model` or `save_related`), some objects would be saved while others wouldn't, leaving the database in an inconsistent state.
+
+**Change:** Wrapped the save loop and success message in `transaction.atomic(using=router.db_for_write(self.model))`, matching the existing pattern used in `changeform_view` and `delete_view`.
+
+**Test results:** All 16 `AdminViewListEditable` tests pass, and all 5 `list_editable` tests in `admin_changelist` pass.

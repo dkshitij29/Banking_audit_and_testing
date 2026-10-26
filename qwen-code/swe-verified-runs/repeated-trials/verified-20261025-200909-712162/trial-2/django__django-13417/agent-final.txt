@@ -1,0 +1,24 @@
+
+
+## Explanation
+
+**Bug:** `QuerySet.ordered` returned `True` for queries with `GROUP BY` that used `Meta.ordering`, even though the SQL compiler drops the `ORDER BY` clause in that case.
+
+**Root cause:** In `compiler.py` (line 590), when a `GROUP BY` is present and ordering comes from `Meta.ordering`, the compiler sets `order_by = None`, producing no `ORDER BY` in the SQL. However, `QuerySet.ordered` (in `query.py`) only checked `default_ordering` and `Meta.ordering` — it didn't account for `group_by`.
+
+**Fix:** Added a `group_by` check in the `ordered` property (`django/db/models/query.py`):
+
+```python
+elif self.query.default_ordering and self.query.get_meta().ordering:
+    if self.query.group_by is not None:
+        return False
+    return True
+```
+
+When `group_by` is set (not `None`), a `GROUP BY` clause will be generated, and the compiler will drop the `Meta.ordering`-based `ORDER BY`. Therefore `ordered` correctly returns `False`.
+
+**Test results:**
+- `queries.tests.QuerysetOrderedTests` — 6/6 OK
+- `aggregation` — 80/80 OK
+- `queries` (full suite) — OK (skipped=13, expected failures=2)
+- `generic_relations.test_forms` — 15/15 OK

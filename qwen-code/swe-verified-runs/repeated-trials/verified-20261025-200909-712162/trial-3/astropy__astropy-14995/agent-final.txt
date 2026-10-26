@@ -1,0 +1,20 @@
+
+
+This is a system reminder showing the current memory catalog. No action needed - my fix for the NDDataRef mask propagation issue is complete. Here's a summary of what was done:
+
+## Fix Summary
+
+**Issue:** NDDataRef mask propagation fails with `handle_mask=np.bitwise_or` when one operand lacks a mask, because `handle_mask(self.mask, None)` is called, and `np.bitwise_or(int, None)` raises `TypeError`.
+
+**Root cause:** In `_arithmetic_mask()` (in `astropy/nddata/mixins/ndarithmetic.py`), the conditional logic had no branch for the case where `self.mask` is not None but `operand.mask` is None. The flow was:
+1. Both None → return None ✓
+2. `self.mask` is None, operand has mask → deepcopy operand's mask ✓
+3. `operand` is None (scalar, not NDData) → deepcopy self's mask ✓
+4. **Missing:** `self.mask` is not None, `operand.mask` is None → fell through to `handle_mask(self.mask, None)` ✗
+
+**Fix:** Added a single `elif operand.mask is None: return deepcopy(self.mask)` branch before the final `else` that calls `handle_mask`.
+
+**Test results:**
+- All reproduction cases from the issue pass
+- All 179 arithmetic tests pass
+- All 219 core nddata tests pass

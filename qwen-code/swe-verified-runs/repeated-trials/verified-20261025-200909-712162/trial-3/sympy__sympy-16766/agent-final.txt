@@ -1,0 +1,26 @@
+
+
+The fix for `PythonCodePrinter` not supporting `Indexed` is complete.
+
+## Summary
+
+**Problem:** `pycode()` produced an unsupported warning for `Indexed` expressions like `p[0]`:
+```
+  # Not supported in Python:
+  # Indexed
+p[0]
+```
+
+**Fix:** Added `_print_Indexed` method to `AbstractPythonCodePrinter` in `sympy/printing/pycode.py`:
+
+```python
+def _print_Indexed(self, expr):
+    base, *indices = expr.args
+    return "{}[{}]".format(str(base), ", ".join([self._print(ind) for ind in indices]))
+```
+
+**Result:** `pycode(p[0])` now returns `'p[0]'`, and `pycode(p[i, j])` returns `'p[i, j]'`.
+
+**Why `AbstractPythonCodePrinter`:** Placing it here (rather than just `PythonCodePrinter`) means all derived printers (`MpmathPrinter`, `NumPyPrinter`, `SciPyPrinter`) inherit the support automatically.
+
+**Tests:** All 9 existing `test_pycode.py` tests pass with no regressions.

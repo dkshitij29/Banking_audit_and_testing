@@ -1,0 +1,20 @@
+diff --git a/lib/matplotlib/pyplot.py b/lib/matplotlib/pyplot.py
+index 58ce4c03fa..a7fa1f9f77 100644
+--- a/lib/matplotlib/pyplot.py
++++ b/lib/matplotlib/pyplot.py
+@@ -2278,9 +2278,13 @@ def set_cmap(cmap: Colormap | str) -> None:
+     matplotlib.cm.register_cmap
+     matplotlib.cm.get_cmap
+     """
+-    cmap = get_cmap(cmap)
++    if isinstance(cmap, str):
++        name = cmap
++    else:
++        name = cmap.name
++        cmap = get_cmap(cmap)
+ 
+-    rc('image', cmap=cmap.name)
++    rc('image', cmap=name)
+     im = gci()
+ 
+     if im is not None:

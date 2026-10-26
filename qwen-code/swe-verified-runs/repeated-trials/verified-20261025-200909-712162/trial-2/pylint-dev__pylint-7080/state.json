@@ -1,0 +1,12 @@
+{
+  "instance_id": "pylint-dev__pylint-7080",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 844.84,
+  "input_tokens": 1412431,
+  "output_tokens": 20371,
+  "changed_tests": true,
+  "evaluation_run_id": "trial-2-8f0a316b45-pylint-dev__pylint-7080-b43aa7e832",
+  "evaluation_seconds": 50.58,
+  "evaluation_exit": 0
+}

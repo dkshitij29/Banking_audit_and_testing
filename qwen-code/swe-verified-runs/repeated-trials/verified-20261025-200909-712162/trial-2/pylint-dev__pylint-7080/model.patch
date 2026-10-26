@@ -1,0 +1,134 @@
+diff --git a/pylint/lint/pylinter.py b/pylint/lint/pylinter.py
+index e2bbf061e..1f93254b2 100644
+--- a/pylint/lint/pylinter.py
++++ b/pylint/lint/pylinter.py
+@@ -610,11 +610,16 @@ class PyLinter(
+                         skip_subtrees.append(root)
+                         yield root
+                     else:
+-                        yield from (
+-                            os.path.join(root, file)
+-                            for file in files
+-                            if file.endswith(".py")
+-                        )
++                        for file in files:
++                            if file.endswith(".py"):
++                                filepath = os.path.join(root, file)
++                                if not _is_ignored_file(
++                                    filepath,
++                                    self.config.ignore,
++                                    self.config.ignore_patterns,
++                                    self.config.ignore_paths,
++                                ):
++                                    yield filepath
+             else:
+                 yield something
+ 
+diff --git a/tests/test_recursive_ignore_paths.py b/tests/test_recursive_ignore_paths.py
+new file mode 100644
+index 000000000..305b8d335
+--- /dev/null
++++ b/tests/test_recursive_ignore_paths.py
+@@ -0,0 +1,102 @@
++"""Tests for ignore-paths with --recursive=y option.
++
++Verifies that ignore-paths correctly filters individual .py files
++in non-package directories during recursive file discovery.
++
++See https://github.com/PyCQA/pylint/issues/7080
++"""
++
++import os
++import re
++import pytest
++
++from pylint.lint import PyLinter
++
++
++@pytest.fixture
++def linter():
++    linter = PyLinter()
++    linter.load_default_plugins()
++    linter.config.recursive = True
++    linter.config.ignore = []
++    linter.config.ignore_patterns = []
++    return linter
++
++
++@pytest.fixture
++def test_dir(tmp_path):
++    """Create a test directory structure:
++    test_dir/
++    ├── good.py
++    └── gen/
++        └── auto.py
++    """
++    (tmp_path / "good.py").write_text("x = 1\n")
++    gen_dir = tmp_path / "gen"
++    gen_dir.mkdir()
++    (gen_dir / "auto.py").write_text("bad_name = 1\n")
++    return tmp_path
++
++
++class TestRecursiveIgnorePaths:
++    def test_ignore_paths_filters_files_in_non_package_dirs(
++        self, linter, test_dir
++    ):
++        """Test that ignore-paths filters individual .py files in non-package dirs."""
++        # Without ignore-paths, both files should be discovered
++        linter.config.ignore_paths = []
++        files = list(linter._discover_files([str(test_dir)]))
++        assert len(files) == 2
++        assert str(test_dir / "good.py") in files
++        assert str(test_dir / "gen" / "auto.py") in files
++
++        # With ignore-paths matching gen/ directory
++        linter.config.ignore_paths = [re.compile(r".*/gen/.*")]
++        files = list(linter._discover_files([str(test_dir)]))
++        assert str(test_dir / "good.py") in files
++        assert str(test_dir / "gen" / "auto.py") not in files
++
++    def test_ignore_paths_with_anchored_pattern(
++        self, linter, tmp_path
++    ):
++        """Test ignore-paths with an anchored pattern like ^src/gen/.*$."""
++        # Create src/gen/ structure
++        src_dir = tmp_path / "src"
++        src_dir.mkdir()
++        (src_dir / "good.py").write_text("x = 1\n")
++        gen_dir = src_dir / "gen"
++        gen_dir.mkdir()
++        (gen_dir / "auto.py").write_text("bad_name = 1\n")
++
++        # Simulate the user's pattern: ^src/gen/.*$
++        linter.config.ignore_paths = [re.compile(r"^src/gen/.*")]
++        old_cwd = os.getcwd()
++        try:
++            os.chdir(str(tmp_path))
++            files = list(linter._discover_files(["src"]))
++        finally:
++            os.chdir(old_cwd)
++
++        # Check that the gen file is NOT in the results
++        discovered = [str(f) for f in files]
++        assert not any("gen" in d.lower() for d in discovered), (
++            f"gen/auto.py should be ignored by pattern ^src/gen/.*, got: {discovered}"
++        )
++
++    def test_ignore_paths_with_package_dirs(self, linter, test_dir):
++        """Test that ignore-paths also filters package directories."""
++        # Make gen/ a package by adding __init__.py
++        (test_dir / "gen" / "__init__.py").write_text("")
++
++        # Without ignore-paths
++        linter.config.ignore_paths = []
++        files = list(linter._discover_files([str(test_dir)]))
++        assert len(files) == 2
++        assert str(test_dir / "good.py") in files
++        assert str(test_dir / "gen") in files
++
++        # With ignore-paths
++        linter.config.ignore_paths = [re.compile(r".*/gen.*")]
++        files = list(linter._discover_files([str(test_dir)]))
++        assert str(test_dir / "good.py") in files
++        assert str(test_dir / "gen") not in files

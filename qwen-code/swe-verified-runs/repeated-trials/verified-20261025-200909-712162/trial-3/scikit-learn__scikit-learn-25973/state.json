@@ -1,0 +1,9 @@
+{
+  "instance_id": "scikit-learn__scikit-learn-25973",
+  "status": "empty_patch",
+  "agent_exit": 0,
+  "agent_seconds": 25.0,
+  "input_tokens": 25044,
+  "output_tokens": 572,
+  "changed_tests": false
+}
