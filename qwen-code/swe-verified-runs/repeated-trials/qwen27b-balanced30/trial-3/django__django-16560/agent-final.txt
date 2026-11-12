@@ -1,0 +1,22 @@
+
+
+Now let me provide a concise summary of the fix.
+
+## Summary
+
+**Issue**: Django ticket #16560 — Allow customizing the `code` attribute of `ValidationError` raised by `BaseConstraint.validate()`.
+
+**Changes made across 3 files**:
+
+### 1. `django/db/models/constraints.py`
+- **`BaseConstraint`**: Added `violation_error_code = None` class attribute and `violation_error_code` parameter to `__init__()`. Updated `deconstruct()` to serialize it.
+- **`CheckConstraint`**: Added `violation_error_code` parameter to `__init__()`, updated `validate()` to pass `code=self.violation_error_code` to `ValidationError`, updated `__eq__` and `__repr__`.
+- **`UniqueConstraint`**: Added `violation_error_code` parameter to `__init__()`, updated `validate()` to pass `code=self.violation_error_code` to `ValidationError`, updated `__eq__` and `__repr__`.
+
+### 2. `django/contrib/postgres/constraints.py`
+- **`ExclusionConstraint`**: Added `violation_error_code` parameter to `__init__()`, updated `validate()` to pass `code=self.violation_error_code` to `ValidationError`, updated `__eq__` and `__repr__`.
+
+### Test results
+All 73 tests in `constraints.tests` pass (4 skipped due to database feature flags). The fix is backward-compatible — `violation_error_code` defaults to `None`, so existing behavior is unchanged.
+
+**Memory saved**: Recorded this fix in project memory under `feedback/django_constraint_fix.md`.

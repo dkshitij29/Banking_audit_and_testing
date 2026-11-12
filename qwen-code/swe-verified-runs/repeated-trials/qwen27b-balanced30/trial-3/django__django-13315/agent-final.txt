@@ -1,0 +1,22 @@
+
+
+Done. Here's the summary:
+
+**Fix:** One-line change in `django/forms/models.py` — added `.distinct()` after `complex_filter()` in `apply_limit_choices_to_to_formfield()`:
+
+```python
+# Before
+formfield.queryset = formfield.queryset.complex_filter(limit_choices_to)
+
+# After  
+formfield.queryset = formfield.queryset.complex_filter(limit_choices_to).distinct()
+```
+
+**Why:** When `limit_choices_to` contains a `Q` object that involves a join (e.g., `Q(related__field=value)`), `complex_filter()` adds JOIN clauses. If the related model has multiple matching rows (e.g., an author with 2 books), the queryset returns duplicates, producing duplicate `<option>` elements in form dropdowns. `.distinct()` eliminates these duplicates — it's a no-op when no joins are involved.
+
+**Test results:**
+- `model_forms.tests` — 148 tests, all pass (1 skipped)
+- `model_fields` — 408 tests, all pass (56 skipped)
+- `foreign_object` — 33 tests, all pass
+
+**Memory saved:** Project memory entry for Django #13315 fix in `~/.qwen/projects/.../memory/project/django_13315_fix.md`.

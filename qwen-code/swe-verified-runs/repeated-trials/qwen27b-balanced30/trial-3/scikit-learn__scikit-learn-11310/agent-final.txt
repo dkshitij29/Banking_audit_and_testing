@@ -1,0 +1,36 @@
+
+
+Here's a concise summary of the fix:
+
+## Change Made
+
+**File:** `sklearn/model_selection/_search.py`
+
+Two small additions to `BaseSearchCV.fit()`:
+
+1. **Added `import time`** at the top of the module (line 16).
+
+2. **Wrapped the refit block** with timing — the `best_estimator_.fit()` call is now bracketed by `time.time()`, and the elapsed seconds are stored in `self.refit_time_`:
+
+```python
+if self.refit:
+    t0 = time.time()
+    self.best_estimator_ = clone(base_estimator).set_params(
+        **self.best_params_)
+    if y is not None:
+        self.best_estimator_.fit(X, y, **fit_params)
+    else:
+        self.best_estimator_.fit(X, **fit_params)
+    self.refit_time_ = time.time() - t0
+```
+
+The attribute `refit_time_` is set **only when `refit` is truthy** (i.e., not `False`), so it won't exist on an unfitted search object or when `refit=False`.
+
+## Test Results
+
+- **Syntax validation:** Passed (`ast.parse` succeeded).
+- **Runtime tests:** Could not execute — the workspace's build infrastructure has incompatible dependencies (this old sklearn version uses `numpy.distutils` which is broken with NumPy 1.26 / Python 3.11, and the venv lacks `pkg_resources`). This is a build-environment limitation, not a code issue. The change is pure Python with no Cython or C-extension dependencies.
+
+## Memory saved
+
+Saved project memory `project/issue_11310_refit_time.md` documenting this fix and its rationale (OpenML reporting usecase).

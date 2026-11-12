@@ -1,0 +1,19 @@
+diff --git a/sympy/core/relational.py b/sympy/core/relational.py
+index f581bfa3c4..1f47a55642 100644
+--- a/sympy/core/relational.py
++++ b/sympy/core/relational.py
+@@ -388,10 +388,13 @@ def __nonzero__(self):
+ 
+     def _eval_as_set(self):
+         # self is univariate and periodicity(self, x) in (0, None)
+-        from sympy.solvers.inequalities import solve_univariate_inequality
++        from sympy.solvers.solveset import solveset
+         syms = self.free_symbols
+         assert len(syms) == 1
+         x = syms.pop()
++        if isinstance(self, Equality):
++            return solveset(self, x)
++        from sympy.solvers.inequalities import solve_univariate_inequality
+         return solve_univariate_inequality(self, x, relational=False)
+ 
+     @property

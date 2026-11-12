@@ -1,0 +1,12 @@
+{
+  "instance_id": "matplotlib__matplotlib-24570",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 778.9,
+  "input_tokens": 1488395,
+  "output_tokens": 28449,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-matplotlib__matplotlib-24570-7c53925071",
+  "evaluation_seconds": 110.61,
+  "evaluation_exit": 0
+}

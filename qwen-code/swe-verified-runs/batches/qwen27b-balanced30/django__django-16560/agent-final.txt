@@ -1,0 +1,22 @@
+
+
+All 73 constraint tests pass. Here's a summary of the changes:
+
+## Summary
+
+Added `violation_error_code` parameter to `BaseConstraint`, `CheckConstraint`, `UniqueConstraint`, and `ExclusionConstraint` to allow customizing the `code` attribute of `ValidationError` raised by `BaseConstraint.validate()`.
+
+### Files modified:
+
+1. **`django/db/models/constraints.py`**:
+   - `BaseConstraint`: Added `violation_error_code` class attribute, `__init__` parameter, `get_violation_error_code()` method, and updated `deconstruct()` to serialize it
+   - `CheckConstraint`: Added `violation_error_code` to `__init__`, passed to `super()`, included in `validate()`'s `ValidationError(code=...)`, `__eq__`, and `__repr__`
+   - `UniqueConstraint`: Same pattern — added to `__init__`, `super()` call, `validate()` (all 3 `ValidationError` raise sites), `__eq__`, and `__repr__`
+
+2. **`django/contrib/postgres/constraints.py`**:
+   - `ExclusionConstraint`: Added `violation_error_code` to `__init__`, passed to `super()`, included in `validate()`'s `ValidationError(code=...)`, `__eq__`, and `__repr__`
+
+### Test results:
+- All 73 existing constraint tests pass (4 skipped due to database features)
+- The `code` parameter defaults to `None`, preserving backward compatibility
+- Custom codes are serialized in `deconstruct()`, preserved through `clone()`, compared in `__eq__`, and shown in `__repr__`

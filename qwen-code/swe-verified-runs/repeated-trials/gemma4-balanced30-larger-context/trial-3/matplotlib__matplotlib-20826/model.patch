@@ -1,0 +1,76 @@
+diff --git a/lib/matplotlib/axis.py b/lib/matplotlib/axis.py
+index 887cf97ef1..8f83465f02 100644
+--- a/lib/matplotlib/axis.py
++++ b/lib/matplotlib/axis.py
+@@ -806,10 +806,19 @@ class Axis(martist.Artist):
+         # Clear the callback registry for this axis, or it may "leak"
+         self.callbacks = cbook.CallbackRegistry()
+ 
++        # Preserve label visibility if the axis is shared
++        label1On = self._major_tick_kw.get('label1On', False)
++        label2On = self._major_tick_kw.get('label2On', False)
++
+         self._reset_major_tick_kw()
+         self._reset_minor_tick_kw()
+         self.reset_ticks()
+ 
++        # Restore label visibility if the axis is shared
++        if self.axes._shared_axes:
++            self._major_tick_kw['label1On'] = label1On
++            self._major_tick_kw['label2On'] = label2On
++
+         self.converter = None
+         self.units = None
+         self.set_units(None)
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..70a6a3d746
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,46 @@
++import numpy as np
++import matplotlib.pyplot as plt
++import matplotlib
++
++def reproduce():
++    # Use a standard figure and subplots with shared axes
++    fig, axes = plt.subplots(2, 2, sharex=True, sharey=True)
++    x = np.arange(0.0, 2*np.pi, 0.01)
++    y = np.sin(x)
++
++    for ax in axes.flatten():
++        ax.clear()
++        ax.plot(x, y)
++    
++    # In a 2x2 grid with sharex=True, sharey=True:
++    # Index 0 (top-left): No labels should be visible.
++    # Index 1 (top-right): x-labels visible (right side), y-labels hidden.
++    # Index 2 (bottom-left): x-labels hidden, y-labels visible (left side).
++    # Index 3 (bottom-right): both labels visible.
++    
++    # Note: By default, Matplotlib might show labels on all sides if not explicitly managed,
++    # but sharex/sharey should ensure that labels are hidden on the shared sides.
++    # With sharex=True, the top row should have hidden x-labels.
++    # With sharey=True, the right column should have hidden y-labels.
++
++    results = []
++    for i, ax in enumerate(axes.flatten()):
++        # Get the first major tick for x and y axes
++        x_tick = ax.xaxis.get_major_ticks()[0]
++        y_tick = ax.yaxis.get_major_ticks()[0]
++        
++        # Check if labels are visible
++        # label1: bottom/left, label2: top/right
++        results.append({
++            "index": i,
++            "x_label1_visible": x_tick.get_label1().get_visible(),
++            "x_label2_visible": x_tick.get_label2().get_visible(),
++            "y_label1_visible": y_tick.get_label1().get_visible(),
++            "y_label2_visible": y_tick.get_label2().get_visible()
++        })
++    
++    print(f"Visibility results: {results}")
++    plt.savefig('repro_output_checked.png')
++
++if __name__ == "__main__":
++    reproduce()

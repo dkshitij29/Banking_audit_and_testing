@@ -1,0 +1,12 @@
+I attempted to run the tests but encountered a `ModuleNotFoundError: No module named 'asgiref'`. This indicates that some dependencies are missing in the environment, which is expected as I am in a host checkout rather than a pre-configured benchmark container.
+
+I have already applied the fix by changing `request.path_info` to `request.path` in `django/contrib/admin/sites.py` within the `catch_all_view` method. This ensures that when `FORCE_SCRIPT_NAME` is set, the redirect correctly includes the script name in the path.
+
+Since I cannot run the tests due to the missing environment dependencies, I have verified the fix by inspecting the code change.
+
+**Summary of Changes:**
+- Modified `django/contrib/admin/sites.py`: Updated `catch_all_view` to use `request.path` instead of `request.path_info` when constructing the redirect path.
+
+**Verification Results:**
+- Code change verified via `read_file`.
+- Test execution failed due to missing dependencies (`asgiref`), but the logic fix matches the requested patch.

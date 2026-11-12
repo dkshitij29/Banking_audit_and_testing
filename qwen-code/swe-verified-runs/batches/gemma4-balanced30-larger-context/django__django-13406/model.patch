@@ -1,0 +1,68 @@
+diff --git a/repro_issue.py b/repro_issue.py
+new file mode 100644
+index 0000000000..296997d7ef
+--- /dev/null
++++ b/repro_issue.py
+@@ -0,0 +1,62 @@
++import os
++import django
++import pickle
++from django.conf import settings
++from django.db import models
++from django.db.models import Sum
++
++# Configure minimal settings for reproduction
++if not settings.configured:
++    settings.configure(
++        DATABASES={
++            'default': {
++                'ENGINE': 'django.db.backends.sqlite3',
++                'NAME': ':memory:',
++            }
++        },
++        INSTALLED_APPS=['__main__'],
++        TIME_ZONE='UTC',
++        USE_TZ=True,
++    )
++    django.setup()
++
++class Toy(models.Model):
++    name = models.CharField(max_length=16)
++    material = models.CharField(max_length=16)
++    price = models.PositiveIntegerField()
++
++    class Meta:
++        app_label = '__main__'
++
++# Create the table
++with Toy._meta.db_table_manager.connection.cursor() as cursor:
++    # SQLite doesn't need special schema setup for this simple model
++    pass
++# Using simple approach to create the table as we are in a host checkout
++from django.db import connection
++with connection.cursor() as cursor:
++    cursor.execute("CREATE TABLE _Toy (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(16), material VARCHAR(16), price INTEGER)")
++    # We need to manually handle the Toy model since we can't run migrations easily
++    # Actually, let's just use the model's own manager if possible.
++    # Since we are in a host environment, let's try to run the code from the description.
++
++# The reporter's script:
++Toy.objects.create(name='foo', price=10, material='wood')
++Toy.objects.create(name='bar', price=20, material='plastic')
++Toy.objects.create(name='baz', price=100, material='wood')
++
++prices = Toy.objects.values('material').annotate(total_price=Sum('price'))
++print(f"prices type: {type(prices)}")
++print(f"prices[0]: {prices[0]}")
++
++prices2 = Toy.objects.all()
++# Simulate the unpickling of the query
++prices2.query = pickle.loads(pickle.dumps(prices.query))
++
++print(f"prices2 type: {type(prices2)}")
++print(f"prices2[0] type: {type(prices2[0])}")
++
++try:
++    print(f"prices2: {prices2}")
++except Exception as e:
++    print(f"Caught expected exception: {type(e).__name__}: {e}")

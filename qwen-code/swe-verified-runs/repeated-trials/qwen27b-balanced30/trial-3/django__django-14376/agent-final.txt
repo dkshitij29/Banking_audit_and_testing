@@ -1,0 +1,14 @@
+
+
+I've completed the fix. Here's a concise summary:
+
+**Change made** — `django/db/backends/mysql/base.py`, `get_connection_params()`:
+
+| Before (deprecated) | After |
+|---|---|
+| `kwargs['db']` | `kwargs['database']` |
+| `kwargs['passwd']` | `kwargs['password']` |
+
+**Verification** — AST-based parse confirmed the deprecated `db` and `passwd` keys are removed, and the `database` and `password` keys are present.
+
+**Limitation** — Django's dependencies (e.g., `asgiref`) are not installed in this environment, so I couldn't run the project's test suite. The fix itself is a straightforward two-word rename with no logic changes.

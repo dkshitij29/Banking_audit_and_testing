@@ -1,0 +1,72 @@
+diff --git a/django/db/models/sql/datastructures.py b/django/db/models/sql/datastructures.py
+index 1edf040e82..aa4d4ed983 100644
+--- a/django/db/models/sql/datastructures.py
++++ b/django/db/models/sql/datastructures.py
+@@ -162,8 +162,9 @@ class Join:
+         return hash(self.identity)
+ 
+     def equals(self, other):
+-        # Ignore filtered_relation in equality check.
+-        return self.identity[:-1] == other.identity[:-1]
++        if not isinstance(other, Join):
++            return NotImplemented
++        return self.identity == other.identity
+ 
+     def demote(self):
+         new = self.relabeled_clone({})
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..70a0780a03
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,50 @@
++from django.db import models
++from django.db.models import FilteredRelation, Q, F, Case, When
++
++class Parent(models.Model):
++    name = models.CharField(max_length=100)
++
++class Nested(models.Model):
++    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
++    is_all = models.BooleanField(default=False)
++    zone = models.CharField(max_length=50, null=True, blank=True)
++    price = models.DecimalField(max_digits=10, decimal_places=2)
++
++# Setup data
++p1 = Parent.objects.create(name="P1")
++# All entry
++n1 = Nested.objects.create(parent=p1, is_all=True, price=100)
++# Zone entry
++n2 = Nested.objects.create(parent=p1, is_all=False, zone="A", price=200)
++
++def test_reproduction():
++    qs = Parent.objects.annotate(
++        relation_zone=FilteredRelation(
++            "nested",
++            condition=Q(nested__zone="A")
++        ),
++        relation_all=FilteredRelation(
++            "nested",
++            condition=Q(nested__is_all=True)
++        ),
++        price_zone=F("relation_zone__price"),
++    ).annotate(
++        price_final=Case(
++            When(
++                price_zone__isnull=True,
++                then=F("relation_all__price"),
++            ),
++            default=F("price_zone")
++        )
++    )
++
++    print(f"SQL: {qs.query}")
++    
++    # Check if there are two joins to the Nested table.
++    # We expect something like:
++    # INNER JOIN ... nested_zone ON ...
++    # INNER JOIN ... nested_all ON ...
++    # If only one join is present, the issue is reproduced.
++
++if __name__ == "__main__":
++    test_reproduction()

@@ -1,0 +1,25 @@
+
+
+All tests pass. Here's a concise summary of the changes:
+
+## Changes Made
+
+**`django/db/models/constraints.py`:**
+- Added `violation_error_code = None` class attribute to `BaseConstraint`
+- Added `violation_error_code` parameter to `BaseConstraint.__init__()`
+- Added `get_violation_error_code()` method to `BaseConstraint`
+- Updated `BaseConstraint.deconstruct()` to serialize `violation_error_code` when set
+- Updated `BaseConstraint` positional arg deprecation to include `violation_error_code`
+- Updated `CheckConstraint`: accepted `violation_error_code` in `__init__`, passed to `super()`, included in `validate()` (`ValidationError` now passes `code=`), `__repr__`, and `__eq__`
+- Updated `UniqueConstraint`: accepted `violation_error_code` in `__init__`, passed to `super()`, included in `validate()` (both expression and condition branches pass `code=`), `__repr__`, and `__eq__`
+
+**`django/contrib/postgres/constraints.py`:**
+- Updated `ExclusionConstraint`: accepted `violation_error_code` in `__init__`, passed to `super()`, included in `validate()` (both branches pass `code=`), `__repr__`, and `__eq__`
+
+## Test Results
+
+All **73 constraint tests pass** (4 skipped for DB feature flags):
+```
+Ran 73 tests in 0.079s
+OK (skipped=4)
+```

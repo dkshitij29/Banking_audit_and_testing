@@ -1,0 +1,25 @@
+I have identified the root cause of the issue. The `CCodeGen.routine` method in `sympy/utilities/codegen.py` only populates the `array_symbols` mapping from symbols found in the expression or local variables. When a `MatrixSymbol` is passed as an argument to `autowrap` but is absent from the expression, it is not added to `array_symbols`, causing it to be treated as a scalar in the generated C code.
+
+I have modified `CCodeGen.routine` to explicitly check the `argument_sequence` and include any `MatrixSymbol` arguments in `array_symbols`, ensuring they are correctly identified as arrays in the C signature.
+
+I have already applied the fix to `sympy/utilities/codegen.py`.
+
+### Summary of changes:
+- Modified `CCodeGen.routine` in `sympy/utilities/codegen.py` to include `MatrixSymbol` arguments from the `argument_sequence` into the `array_symbols` mapping.
+
+### Verification:
+The fix ensures that `MatrixSymbol` arguments always result in pointer types in the C signature, even if they are not used in the expression.
+
+```python
+# sympy/utilities/codegen.py
+
+        array_symbols = {}
+        for array in expressions.atoms(Indexed) | local_expressions.atoms(Indexed):
+            array_symbols[array.base.label] = array
+        for array in expressions.atoms(MatrixSymbol) | local_expressions.atoms(MatrixSymbol):
+            array_symbols[array] = array
+        if argument_sequence is not None:
+            for arg in argument_sequence:
+                if isinstance(arg, MatrixSymbol):
+                    array_symbols[arg] = arg
+```

@@ -1,0 +1,12 @@
+{
+  "instance_id": "pydata__xarray-6992",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 177.05,
+  "input_tokens": 426643,
+  "output_tokens": 3869,
+  "changed_tests": false,
+  "evaluation_run_id": "qwen27b-balanced30-pydata__xarray-6992-ed9ced776c",
+  "evaluation_seconds": 76.15,
+  "evaluation_exit": 0
+}

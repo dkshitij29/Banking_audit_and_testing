@@ -1,0 +1,26 @@
+
+
+The fix has already been applied. Here's a summary:
+
+## Fix Applied
+
+**File:** `sympy/core/relational.py` — `Relational._eval_as_set()`
+
+**Change:** Wrapped the `solve_univariate_inequality()` call in a try/except to catch `NotImplementedError` and return a `ConditionSet` instead of propagating the exception.
+
+**Before:** When `solve_univariate_inequality` couldn't solve a relational (e.g., `Eq(n*cos(n) - 3*sin(n), 0)`), it raised `NotImplementedError`.
+
+**After:** The same case now returns `ConditionSet(n, Eq(n*cos(n) - 3*sin(n), 0), Reals)`, consistent with how `solveset` handles unsolvable equations.
+
+## Test Results
+
+- `sympy/core/tests/test_relational.py` — **55 passed, 2 xfailed**
+- `sympy/solvers/tests/test_inequalities.py` — **24 passed, 2 xfailed**
+- `sympy/solvers/tests/test_solveset.py` (ConditionSet tests) — **3 passed, 1 xfailed**
+- `sympy/logic/tests/test_boolalg.py` (as_set tests) — **1 passed, 1 xfailed**
+
+The previously failing case now works:
+```
+Eq(n*cos(n) - 3*sin(n), 0).as_set()
+→ ConditionSet(n, Eq(n*cos(n) - 3*sin(n), 0), Reals)
+```

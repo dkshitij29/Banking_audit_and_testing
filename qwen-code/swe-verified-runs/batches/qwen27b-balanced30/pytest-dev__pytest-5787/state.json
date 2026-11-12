@@ -1,0 +1,12 @@
+{
+  "instance_id": "pytest-dev__pytest-5787",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 1014.14,
+  "input_tokens": 3062244,
+  "output_tokens": 18740,
+  "changed_tests": false,
+  "evaluation_run_id": "qwen27b-balanced30-pytest-dev__pytest-5787-c18d9e26a1",
+  "evaluation_seconds": 35.93,
+  "evaluation_exit": 0
+}

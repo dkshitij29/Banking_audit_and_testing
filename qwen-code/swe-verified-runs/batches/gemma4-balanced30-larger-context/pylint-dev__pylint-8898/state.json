@@ -1,0 +1,12 @@
+{
+  "instance_id": "pylint-dev__pylint-8898",
+  "status": "ambiguous_failure",
+  "agent_exit": 0,
+  "agent_seconds": 137.37,
+  "input_tokens": 930353,
+  "output_tokens": 4644,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-pylint-dev__pylint-8898-9ed341de18",
+  "evaluation_seconds": 36.38,
+  "evaluation_exit": 0
+}

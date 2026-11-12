@@ -1,0 +1,12 @@
+I have successfully applied the fix for the `admin.E108` issue.
+
+### Changes made:
+In `django/contrib/admin/checks.py`, I refactored `_check_list_display_item` to remove the `hasattr(obj.model, item)` check. This check was causing false positives for fields like `PositionField`, where `hasattr` returns `False` because the field's `get` method raises an exception when called on the model class.
+
+The new logic attempts to retrieve the field using `obj.model._meta.get_field(item)` first. If that fails with `FieldDoesNotExist`, it tries `getattr(obj.model, item)`. If both attempts fail, it correctly reports the `admin.E108` error. This ensures that fields accessible via `getattr` but not via `get_field` (and vice-versa) are correctly validated.
+
+### Verification:
+The code now follows the logic recommended in the issue report:
+- If `get_field` succeeds, it proceeds to check for `ManyToManyField`.
+- If `get_field` fails but `getattr` succeeds, it proceeds to check for `ManyToManyField`.
+- Only if both fail is `admin.E108` raised.

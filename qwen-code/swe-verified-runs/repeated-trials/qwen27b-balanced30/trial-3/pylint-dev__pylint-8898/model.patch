@@ -1,0 +1,79 @@
+diff --git a/pylint/config/argument.py b/pylint/config/argument.py
+index 30a5fd175..6d8189f02 100644
+--- a/pylint/config/argument.py
++++ b/pylint/config/argument.py
+@@ -111,10 +111,54 @@ def _regex_transformer(value: str) -> Pattern[str]:
+         raise argparse.ArgumentTypeError(msg) from e
+ 
+ 
++def _split_regex_csv(value: str) -> list[str]:
++    """Split a comma-separated list of regex patterns, respecting grouping.
++
++    Commas inside parentheses `()`, brackets `[]`, and braces `{}` are not
++    treated as delimiters.
++    """
++    if not value:
++        return []
++    result: list[str] = []
++    current: list[str] = []
++    depth = 0
++    i = 0
++    while i < len(value):
++        char = value[i]
++        if char == "\\":
++            # Escape sequence: include the backslash and the next character
++            current.append(char)
++            if i + 1 < len(value):
++                i += 1
++                current.append(value[i])
++            i += 1
++            continue
++        if char in "([{":
++            depth += 1
++            current.append(char)
++        elif char in ")]}":
++            depth -= 1
++            current.append(char)
++        elif char == "," and depth == 0:
++            # This is a delimiter
++            item = "".join(current).strip()
++            if item:
++                result.append(item)
++            current = []
++        else:
++            current.append(char)
++        i += 1
++    # Append the last item
++    item = "".join(current).strip()
++    if item:
++        result.append(item)
++    return result
++
++
+ def _regexp_csv_transfomer(value: str) -> Sequence[Pattern[str]]:
+     """Transforms a comma separated list of regular expressions."""
+     patterns: list[Pattern[str]] = []
+-    for pattern in _csv_transformer(value):
++    for pattern in _split_regex_csv(value):
+         patterns.append(_regex_transformer(pattern))
+     return patterns
+ 
+diff --git a/tests/config/test_config.py b/tests/config/test_config.py
+index 83c8b072e..ff48403af 100644
+--- a/tests/config/test_config.py
++++ b/tests/config/test_config.py
+@@ -137,12 +137,12 @@ def test_csv_regex_error(capsys: CaptureFixture) -> None:
+     """
+     with pytest.raises(SystemExit):
+         Run(
+-            [str(EMPTY_MODULE), r"--bad-names-rgx=(foo{1,3})"],
++            [str(EMPTY_MODULE), r"--bad-names-rgx=(foo{1,3}),[invalid"],
+             exit=False,
+         )
+     output = capsys.readouterr()
+     assert (
+-        r"Error in provided regular expression: (foo{1 beginning at index 0: missing ), unterminated subpattern"
++        r"Error in provided regular expression: [invalid beginning at index 0: unterminated character set"
+         in output.err
+     )
+ 

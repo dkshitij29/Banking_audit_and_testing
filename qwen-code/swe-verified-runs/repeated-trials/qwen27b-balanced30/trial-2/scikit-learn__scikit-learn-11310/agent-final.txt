@@ -1,0 +1,32 @@
+
+
+This is a non-interactive, single-turn run and my work on the issue is already complete. Here's a concise summary:
+
+---
+
+## Fix: Added `refit_time_` attribute to `BaseSearchCV`
+
+**Changes in `sklearn/model_selection/_search.py`:**
+
+1. **Added `import time`** (line 8) — standard library, no new dependency.
+
+2. **Wrapped the refit block with timing** (lines 771–776):
+   ```python
+   if self.refit:
+       self.best_estimator_ = clone(base_estimator).set_params(
+           **self.best_params_)
+       start_time = time.time()
+       if y is not None:
+           self.best_estimator_.fit(X, y, **fit_params)
+       else:
+           self.best_estimator_.fit(X, **fit_params)
+       self.refit_time_ = time.time() - start_time
+   ```
+
+**Behavior:**
+- `refit_time_` is set only when `refit=True` (the default), storing the elapsed wall-clock time in seconds for the final `.fit()` call on the full dataset.
+- When `refit=False`, no `refit_time_` attribute is created — consistent with how `best_estimator_` is also absent in that case.
+- The fix applies to both `GridSearchCV` and `RandomizedSearchCV` since both inherit from `BaseSearchCV`.
+- Follows the same `time.time()` pattern used in `_fit_and_score` for `fit_time` / `score_time`.
+
+**Limitation:** Could not run integration tests because the workspace's C extensions (`_check_build`) are not compiled and `setup.py` lacks `pkg_resources` on this Python 3.12 host. Syntax verified via `py_compile`.

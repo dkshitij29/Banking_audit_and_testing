@@ -1,0 +1,51 @@
+diff --git a/repro_issue.py b/repro_issue.py
+new file mode 100644
+index 000000000..66fb628e6
+--- /dev/null
++++ b/repro_issue.py
+@@ -0,0 +1,45 @@
++import itertools
++import pytest
++import sys
++
++class BaseMeta(type):
++    @property
++    def pytestmark(self):
++        return (
++            getattr(self, "_pytestmark", []) +
++            list(itertools.chain.from_iterable(getattr(x, "_pytestmark", []) for x in self.__mro__))
++        )
++
++    @pytestmark.setter
++    def pytestmark(self, value):
++        self._pytestmark = value
++
++class Base(object):
++    # Without this metaclass, foo and bar markers override each other, and test_dings
++    # will only have one marker
++    # With the metaclass, test_dings will have both
++    __metaclass__ = BaseMeta if sys.version_info[0] < 3 else None
++
++    if sys.version_info[0] >= 3:
++        # In Python 3, we need a different way to apply the metaclass if it's not automatic
++        # But for the sake of repro, let's see if we can just use it.
++        pass
++
++@pytest.mark.foo
++class Foo(Base):
++    pass
++
++@pytest.mark.bar
++class Bar(Base):
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        # This test should have both markers, foo and bar.
++        # In practice markers are resolved using MRO (so foo wins), unless the
++        # metaclass is applied
++        pass
++
++if __name__ == "__main__":
++    # We need to run pytest on this file
++    pass

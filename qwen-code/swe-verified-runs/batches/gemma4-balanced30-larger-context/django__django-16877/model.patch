@@ -1,0 +1,26 @@
+diff --git a/django/template/defaultfilters.py b/django/template/defaultfilters.py
+index 5289ef34a0..8872dba81c 100644
+--- a/django/template/defaultfilters.py
++++ b/django/template/defaultfilters.py
+@@ -489,13 +489,17 @@ def safe(value):
+ 
+ 
+ @register.filter(is_safe=True)
+-def safeseq(value):
++def escapeseq(value):
+     """
+-    A "safe" filter for sequences. Mark each element in the sequence,
+-    individually, as safe, after converting them to strings. Return a list
++    An "escape" filter for sequences. Escape each element in the sequence,
++    individually, after converting them to strings. Return a list
+     with the results.
+     """
+-    return [mark_safe(obj) for obj in value]
++    return [conditional_escape(str(obj)) for obj in value]
++
++
++@register.filter(is_safe=True)
++def safeseq(value):
+ 
+ 
+ @register.filter(is_safe=True)

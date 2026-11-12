@@ -1,0 +1,15 @@
+I have analyzed the code and identified that the restriction on the `mul_symbol` argument in the `latex()` function originates from a fixed lookup table in the `LatexPrinter` class's `__init__` method. Providing a symbol not in the table (like `\,`) causes a `KeyError`.
+
+I have updated `sympy/printing/latex.py` to support arbitrary symbols. The fix handles existing options (`None`, `ldot`, `dot`, `times`) correctly while allowing custom symbols to be used directly for both standard and numeric contexts.
+
+### Changes:
+- Modified `LatexPrinter.__init__` in `sympy/printing/latex.py` to use `.get()` with a fallback for the `mul_symbol` lookup.
+- Implemented logic to ensure `mul_symbol_latex_numbers` also defaults correctly when a custom symbol is provided.
+
+### Verification Results:
+Since the environment lacks `mpmath`, I couldn't run a full `sympy` import test, but I verified the logic by inspecting the modified `LatexPrinter` class:
+- **Input `None`**: `mul_symbol_latex` = `r" "`, `mul_symbol_latex_numbers` = `r" \cdot "` (matches original).
+- **Input `"times"`**: `mul_symbol_latex` = `r" \times "`, `mul_symbol_latex_numbers` = `r" \times "` (matches original).
+- **Input `"\\,"`**: `mul_symbol_latex` = `'\\,'`, `mul_symbol_latex_numbers` = `'\\,'` (new behavior, fixes crash).
+
+The fix is minimal and preserves all existing functionality.

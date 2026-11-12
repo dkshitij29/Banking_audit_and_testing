@@ -1,0 +1,20 @@
+diff --git a/django/core/servers/basehttp.py b/django/core/servers/basehttp.py
+index 14dab517c9..cd9a8027c1 100644
+--- a/django/core/servers/basehttp.py
++++ b/django/core/servers/basehttp.py
+@@ -17,6 +17,7 @@ from django.core.exceptions import ImproperlyConfigured
+ from django.core.handlers.wsgi import LimitedStream
+ from django.core.wsgi import get_wsgi_application
+ from django.utils.module_loading import import_string
++from django.db import connections
+ 
+ __all__ = ('WSGIServer', 'WSGIRequestHandler')
+ 
+@@ -175,6 +176,7 @@ class WSGIRequestHandler(simple_server.WSGIRequestHandler):
+             self.connection.shutdown(socket.SHUT_WR)
+         except (AttributeError, OSError):
+             pass
++        connections.close_all()
+ 
+     def handle_one_request(self):
+         """Copy of WSGIRequestHandler.handle() but with different ServerHandler"""

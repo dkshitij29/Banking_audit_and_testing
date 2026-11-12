@@ -1,0 +1,97 @@
+diff --git a/django/db/models/constraints.py b/django/db/models/constraints.py
+index e7f81d3ee9..06aadf1a8d 100644
+--- a/django/db/models/constraints.py
++++ b/django/db/models/constraints.py
+@@ -37,6 +37,11 @@ class CheckConstraint(BaseConstraint):
+         where = query.build_where(self.check)
+         compiler = query.get_compiler(connection=schema_editor.connection)
+         sql, params = where.as_sql(compiler, schema_editor.connection)
++        # Remove table qualifiers from the check SQL.
++        # This ensures that "table"."field" becomes "field", which is required
++        # for CHECK constraints on some backends like SQLite and Oracle.
++        import re
++        sql = re.sub(r'\"[^\"]+\"\\."', '', sql)
+         return sql % tuple(schema_editor.quote_value(p) for p in params)
+ 
+     def constraint_sql(self, model, schema_editor):
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..bc3ea34038
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,75 @@
++import os
++import django
++from django.conf import settings
++from django.db import models
++from django.db.models import Q, F
++from django.db.models.constraints import CheckConstraint
++from django.db.models.sql.query import Query
++from django.db.models.sql.where import AND, OR
++from django.db.models.sql.constants import SINGLE
++
++# Setup Django configuration
++if not settings.configured:
++    settings.configure(
++        DATABASES={
++            'default': {
++                'ENGINE': 'django.db.backends.sqlite3',
++                'NAME': ':memory:',
++            }
++        },
++        INSTALLED_APPS=['__main__'],
++        TIME_ZONE='UTC',
++        USE_TZ=True,
++    )
++    django.setup()
++
++class TestConstraint(models.Model):
++    field_1 = models.IntegerField(blank=True, null=True)
++    flag = models.BooleanField(blank=False, null=False)
++
++    class Meta:
++        constraints = [
++            CheckConstraint(
++                check=Q(flag__exact=True, field_1__isnull=False) |
++                      Q(flag__exact=False,),
++                name='field_1_has_value_if_flag_set'),
++        ]
++
++def reproduce_issue():
++    print("Testing CheckConstraint SQL generation...")
++    # The issue description shows the model and the constraint
++    # We want to see the SQL generated for the constraint
++    
++    # Manually construct the Q object as shown in the migration example
++    # migration: models.Q(models.Q(('field_1__isnull', False), ('flag__exact', True)), ('flag__exact', False), _connector='OR')
++    
++    q1 = Q(('field_1__isnull', False), ('flag__exact', True))
++    q2 = Q('flag__exact', False)
++    combined_q = Q(q1, q2, _connector='OR')
++
++    # Create the Query object for the model
++    query = Query(model=TestConstraint)
++    
++    # Build the where clause
++    where_node = query.build_where(combined_q)
++    
++    # Get the compiler and as_sql
++    # We use the same compiler as the real migration would
++    from django.db import connections
++    compiler = query.get_compiler(connection=connections['default'])
++    
++    sql, params = where_node.as_sql(compiler, connections['default'])
++    
++    print(f"Generated SQL: {sql}")
++    print(f"Parameters: {params}")
++
++    # The expected SQL part was:
++    # ((("field_1" IS NOT NULL AND "flag" = 1) OR "flag" = 0))
++    # The actual reported SQL was:
++    # ((("new__app_testconstraint"."field_1" IS NOT NULL AND "flag" = 1) OR "flag" = 0))
++    
++    # Note: "new__app_testconstraint"."field_1" is the problem.
++    # It shouldn't have the table alias in the check constraint for some backends.
++
++if __name__ == "__main__":
++    reproduce_issue()

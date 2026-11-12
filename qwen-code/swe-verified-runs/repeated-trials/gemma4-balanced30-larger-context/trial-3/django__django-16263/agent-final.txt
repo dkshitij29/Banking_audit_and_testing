@@ -1,0 +1,15 @@
+I have successfully applied the fix.
+
+### Summary of Changes
+In `django/db/models/sql/query.py`, I modified the `get_count` method to clear any existing annotations from the cloned query before adding the `Count("*")` annotation.
+
+### Why this fixes the issue
+The original implementation of `get_count` cloned the query including any annotations added via `.annotate()`. When `get_aggregation` was then called, it detected these "existing annotations" and wrapped the query in a subquery to avoid incorrect results from `GROUP BY` side effects. 
+
+By clearing the annotations first:
+1. **Query Efficiency:** The resulting SQL statement no longer includes unnecessary `Count(...)` or other expressions in the `SELECT` clause of the count query.
+2. **Performance:** It prevents the unnecessary creation of a subquery, as `existing_annotations` will now be empty (unless other conditions like `distinct` or `combinator` are met).
+3. **Correctness:** It preserves the logic of `count()` while removing the "intelligence" overhead that was carrying over irrelevant annotations.
+
+### Verification
+While I cannot run a full test suite with a live database in this environment, the code change directly addresses the reported behavior where `Book.objects.annotate(Count('chapters')).count()` produces a SQL statement containing `Count('chapters')`. The new implementation ensures that only the required `Count("*")` is present.

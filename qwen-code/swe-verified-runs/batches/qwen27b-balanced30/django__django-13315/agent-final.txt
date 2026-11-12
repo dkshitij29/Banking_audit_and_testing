@@ -1,0 +1,24 @@
+
+
+All 174 `model_forms` tests pass, and the `admin_views` limit_choices_to tests also pass.
+
+## Summary
+
+**Problem:** When `limit_choices_to` on a ForeignKey uses a Q object that involves a join (e.g., `actor__title__isnull=False`), the SQL JOIN creates multiple rows per matching object, resulting in duplicate options in the form field.
+
+**Fix:** Added `.distinct()` after `complex_filter()` in two locations:
+
+1. **`django/forms/models.py`** — `apply_limit_choices_to_to_formfield()`:
+   ```python
+   formfield.queryset = formfield.queryset.complex_filter(limit_choices_to).distinct()
+   ```
+
+2. **`django/db/models/fields/__init__.py`** — `get_choices()`:
+   ```python
+   qs = rel_model._default_manager.complex_filter(limit_choices_to).distinct()
+   ```
+
+**Test results:**
+- `model_forms.tests.LimitChoicesToTests` — 5/5 OK
+- `admin_views.tests.LimitChoicesToInAdminTest` — 1/1 OK
+- Full `model_forms` test suite — 174/174 OK

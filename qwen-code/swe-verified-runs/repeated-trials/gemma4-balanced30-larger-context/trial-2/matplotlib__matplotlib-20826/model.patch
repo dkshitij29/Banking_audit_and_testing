@@ -1,0 +1,25 @@
+diff --git a/reproduce_bug.py b/reproduce_bug.py
+new file mode 100644
+index 0000000000..4a9b600472
+--- /dev/null
++++ b/reproduce_bug.py
+@@ -0,0 +1,19 @@
++import numpy as np
++import matplotlib.pyplot as plt
++from matplotlib.ticker import AutoLocator
++
++def reproduce():
++    fig, axes = plt.subplots(2, 2, sharex=True, sharey=True)
++    x = np.arange(0.0, 2*np.pi, 0.01)
++    y = np.sin(x)
++
++    for ax in axes.flatten():
++        ax.clear()
++        ax.plot(x, y)
++    
++    # Save the figure to inspect
++    fig.savefig('repro_bug.png')
++    print("Reproduction plot saved to repro_bug.png")
++
++if __name__ == "__main__":
++    reproduce()

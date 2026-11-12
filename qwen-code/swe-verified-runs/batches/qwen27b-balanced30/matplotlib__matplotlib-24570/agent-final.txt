@@ -1,0 +1,22 @@
+
+
+**Explanation**
+
+The bug was in the `_get_aligned_offsets` function in `lib/matplotlib/offsetbox.py` (line 170-173). The `align` parameter values `"top"` and `"bottom"` were swapped in the conditional branches:
+
+- `align in ["left", "top"]` was computing `offsets = [d]` — which places boxes at the **bottom** (y=0), not the top
+- `align in ["right", "bottom"]` was computing `offsets = [height - h + d]` — which places boxes at the **top** (y=height), not the bottom
+
+The fix swaps the labels to match the actual behavior:
+- `align in ["left", "bottom"]` → `offsets = [d]` (bottom-aligned)
+- `align in ["right", "top"]` → `offsets = [height - h + d]` (top-aligned)
+
+**Test results**
+
+Verified with a direct call to `_get_aligned_offsets` for two boxes (heights 20, 30, total height 30):
+
+- `align=top`: tops now at y=30 ✓ (both aligned at top)
+- `align=bottom`: bottoms now at y=0 ✓ (both aligned at bottom)
+- `align=center`: unchanged (midpoint alignment) ✓
+
+Could not run the project's full test suite (e.g., `pytest`) because the compiled C extensions were built against NumPy 1.x while the environment initially had NumPy 2.x; downgrading NumPy resolved the import issue but image-based comparison tests require additional setup.

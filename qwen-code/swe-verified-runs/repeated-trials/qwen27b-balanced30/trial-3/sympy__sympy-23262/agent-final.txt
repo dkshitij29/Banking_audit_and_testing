@@ -1,0 +1,16 @@
+
+
+## Summary
+
+**Bug:** The `_recursive_to_string` function in `sympy/utilities/lambdify.py` formatted all Python tuples as `(...)`, which omits the trailing comma for single-element tuples. In Python, `(1)` is an integer, not a tuple — the correct syntax is `(1,)`.
+
+**Fix:** In `sympy/utilities/lambdify.py`, when the argument is a Python `tuple` with exactly one element, the delimiter is now `"(", ",)"` instead of `"()"`. Multi-element and empty tuples are unaffected.
+
+**Changed file:** `sympy/utilities/lambdify.py` (line ~961)
+
+**Test results:**
+- All 97 lambdify tests pass (20 skipped for missing optional deps)
+- All 21 pycode printing tests pass (1 skipped)
+- Manual verification confirms `lambdify([], tuple([1]))` now returns `(1,)` and the generated source is `return (1,)`
+
+**Memory saved:** One project memory entry documenting this fix in `.qwen/projects/.../memory/fix_tuple_printing.md`, indexed in `MEMORY.md`.

@@ -1,0 +1,41 @@
+diff --git a/django/db/models/sql/query.py b/django/db/models/sql/query.py
+index 54f3258eac..d5940ed066 100644
+--- a/django/db/models/sql/query.py
++++ b/django/db/models/sql/query.py
+@@ -1030,14 +1030,28 @@ class Query(BaseExpression):
+             if (reuse is None or a in reuse) and j.equals(join)
+         ]
+         if reuse_aliases:
+-            if join.table_alias in reuse_aliases:
+-                reuse_alias = join.table_alias
+-            else:
+-                # Reuse the most recent alias of the joined table
+-                # (a many-to-many relation may be joined multiple times).
+-                reuse_alias = reuse_aliases[-1]
+-            self.ref_alias(reuse_alias)
+-            return reuse_alias
++            if join.filtered_relation and (
++                join.table_alias is None
++                or join.table_alias not in reuse_aliases
++            ):
++                # Don't reuse a join if it has a different filtered_relation
++                # (the alias differs).
++                reuse_aliases = [
++                    a
++                    for a, j in self.alias_map.items()
++                    if a in reuse_aliases
++                    and j.filtered_relation is not None
++                    and j.filtered_relation.alias == join.filtered_relation.alias
++                ]
++            if reuse_aliases:
++                if join.table_alias in reuse_aliases:
++                    reuse_alias = join.table_alias
++                else:
++                    # Reuse the most recent alias of the joined table
++                    # (a many-to-many relation may be joined multiple times).
++                    reuse_alias = reuse_aliases[-1]
++                self.ref_alias(reuse_alias)
++                return reuse_alias
+ 
+         # No reuse is possible, so we need a new alias.
+         alias, _ = self.table_alias(

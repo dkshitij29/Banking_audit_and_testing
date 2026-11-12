@@ -1,0 +1,10 @@
+{
+  "instance_id": "django__django-15554",
+  "status": "unresolved",
+  "agent_exit": 124,
+  "agent_seconds": 1200.12,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-2-5aafb61dc3-django__django-15554-e55f058c7d",
+  "evaluation_seconds": 36.83,
+  "evaluation_exit": 0
+}

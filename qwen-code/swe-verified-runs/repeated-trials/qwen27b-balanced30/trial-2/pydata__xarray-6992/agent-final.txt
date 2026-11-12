@@ -1,0 +1,18 @@
+
+
+**Fix applied.** The bug was in `DataVariables.__len__` in `xarray/core/dataset.py` (line 368). It computed `len(_variables) - len(_coord_names)`, which returns a negative value when `_coord_names` has entries not present in `_variables` (e.g., after `reset_index("z", drop=True)` removes the index's coordinate variables but keeps the coord names).
+
+The fix aligns `__len__` with `__iter__`: count only keys that are in `_variables` AND not in `_coord_names`, matching the actual items yielded by iteration.
+
+```diff
+-    def __len__(self) -> int:
+-        return len(self._dataset._variables) - len(self._dataset._coord_names)
++    def __len__(self) -> int:
++        return sum(
++            1
++            for key in self._dataset._variables
++            if key not in self._dataset._coord_names
++        )
+```
+
+**Test results:** All 4 relevant tests pass (`test_data_vars_properties`, `test_set_index`, `test_reset_index`, `test_reset_index_keep_attrs`), and the original MVCE now works without error.

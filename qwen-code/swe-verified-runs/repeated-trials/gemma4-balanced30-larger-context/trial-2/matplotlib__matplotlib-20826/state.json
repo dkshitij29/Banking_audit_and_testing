@@ -1,0 +1,13 @@
+{
+  "instance_id": "matplotlib__matplotlib-20826",
+  "status": "unresolved",
+  "agent_exit": 1,
+  "agent_seconds": 56.05,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 610571,
+  "output_tokens": 1512,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-2-7581567fed-matplotlib__matplotlib-20826-7503d00a30",
+  "evaluation_seconds": 122.71,
+  "evaluation_exit": 0
+}

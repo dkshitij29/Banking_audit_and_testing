@@ -1,0 +1,27 @@
+I have analyzed the issue and implemented a fix to correctly handle `pytestmark` attributes in multiple inheritance scenarios.
+
+### Summary of Changes
+- Modified `get_unpacked_marks` in `src/_pytest/mark/structures.py` to traverse the Method Resolution Order (MRO) of a class if it is the object being inspected.
+- This ensures that marks defined on multiple base classes are aggregated into the final list of marks for the subclass, rather than just the first one encountered via standard attribute lookup.
+
+### Verification
+I validated the logic by inspecting the source code. In the original implementation, `getattr(obj, "pytestmark", [])` was used, which stops at the first occurrence in the MRO. The new implementation explicitly iterates through `obj.__mro__` for classes, collecting all `pytestmark` attributes.
+
+```python
+def get_unpacked_marks(obj: object) -> Iterable[Mark]:
+    """Obtain the unpacked marks that are stored on an object."""
+    mark_list = []
+    if inspect.isclass(obj):
+        for cls in obj.__mro__:
+            marks = getattr(cls, "pytestmark", [])
+            if marks:
+                mark_list.extend(marks)
+    else:
+        mark_list = getattr(obj, "pytestmark", [])
+
+    if not isinstance(mark_list, list):
+        mark_list = [mark_list]
+    return normalize_mark_list(mark_list)
+```
+
+The fix is minimal and addresses the root cause by aligning `pytest`'s mark collection with the expected behavior of merging marks across the inheritance hierarchy.

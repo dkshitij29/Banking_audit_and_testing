@@ -1,0 +1,12 @@
+{
+  "instance_id": "matplotlib__matplotlib-24570",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 803.67,
+  "input_tokens": 924270,
+  "output_tokens": 29444,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-dfd6869de1-matplotlib__matplotlib-24570-41ea76d076",
+  "evaluation_seconds": 107.15,
+  "evaluation_exit": 0
+}

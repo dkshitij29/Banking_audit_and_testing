@@ -1,0 +1,20 @@
+I have already implemented the `escapeseq` filter in `django/template/defaultfilters.py`. It is placed immediately before the `safeseq` filter.
+
+**Implementation details:**
+- Added `escapeseq` filter which iterates through a sequence, converts each item to a string, and applies `conditional_escape`.
+- The filter is marked as `is_safe=True` to match the pattern of `safeseq`.
+- It returns a list of escaped strings, allowing it to be used with the `join` filter (e.g., `{{ some_list|escapeseq|join:"," }}`).
+
+The change is as follows:
+```python
+@register.filter(is_safe=True)
+def escapeseq(value):
+    """
+    An "escape" filter for sequences. Escape each element in the sequence,
+    individually, after converting them to strings. Return a list
+    with the results.
+    """
+    return [conditional_escape(str(obj)) for obj in value]
+```
+
+No tests were run as no specific test instructions were provided for this new filter, and the change is a direct addition to the default filters.

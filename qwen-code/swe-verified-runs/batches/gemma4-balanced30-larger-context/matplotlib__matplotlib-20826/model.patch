@@ -1,0 +1,48 @@
+diff --git a/lib/matplotlib/axes/_base.py b/lib/matplotlib/axes/_base.py
+index 802fd3c997..cb81b67b5b 100644
+--- a/lib/matplotlib/axes/_base.py
++++ b/lib/matplotlib/axes/_base.py
+@@ -1192,8 +1192,17 @@ class _AxesBase(martist.Artist):
+         xaxis_visible = self.xaxis.get_visible()
+         yaxis_visible = self.yaxis.get_visible()
+ 
+-        self.xaxis.clear()
+-        self.yaxis.clear()
++        if self._sharex is None:
++            self.xaxis.clear()
++        else:
++            for artist in list(self._children):
++                artist.remove()
++
++        if self._sharey is None:
++            self.yaxis.clear()
++        else:
++            for artist in list(self._children):
++                artist.remove()
+ 
+         for name, spine in self.spines.items():
+             spine.clear()
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..98565587a0
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,18 @@
++import numpy as np
++import matplotlib.pyplot as plt
++from matplotlib.ticker import NullFormatter
++
++def reproduce():
++    fig, axes = plt.subplots(2, 2, sharex=True, sharey=True)
++    x = np.arange(0.0, 2*np.pi, 0.01)
++    y = np.sin(x)
++
++    for ax in axes.flatten():
++        ax.clear()
++        ax.plot(x, y)
++    
++    plt.savefig('reproduce_bug.png')
++    print("Reproduction plot saved to reproduce_bug.png")
++
++if __name__ == "__main__":
++    reproduce()

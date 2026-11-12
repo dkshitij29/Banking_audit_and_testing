@@ -1,0 +1,16 @@
+I have analyzed the issue and identified the root cause. The `ax.clear()` method in Matplotlib (specifically `Axes.cla()` calling `Axis.clear()`) resets the tick property dictionaries (`_major_tick_kw` and `_minor_tick_kw`) to their default values. In shared axis configurations, these properties (specifically `label1On` and `label2On`) are used to determine which tick labels are visible. Because `Axis.clear()` blindly resets them, labels that should be hidden on shared axes reappear.
+
+I have successfully applied a fix in `lib/matplotlib/axis.py` that captures the current visibility states of the labels before the reset and restores them if the axis is part of a shared group.
+
+### Summary of Changes
+- Modified `Axis.clear()` in `lib/matplotlib/axis.py`.
+- Added logic to capture `label1On` and `label2On` from `_major_tick_kw`.
+- Performed the standard clear operations (`_reset_major_tick_kw`, `_reset_minor_tick_kw`, `reset_ticks`).
+- Restored the captured visibility states if `self.axes._shared_axes` is present.
+
+### Verification Results
+I prepared a reproduction script `reproduce_issue.py` to verify the fix.
+- **Initial State:** Calling `ax.clear()` on a 2x2 shared grid resulted in `label1On` and `label2On` being reset to default visibility, causing labels to appear on all subplots.
+- **After Fix:** The script confirms that labels remain hidden on the shared sides of the subplots as expected after `ax.clear()` is called.
+
+The fix is minimal and preserves the intended behavior of shared axes.

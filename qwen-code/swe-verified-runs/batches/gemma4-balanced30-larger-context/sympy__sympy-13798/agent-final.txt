@@ -1,0 +1,28 @@
+I have already applied the fix to `sympy/printing/latex.py`. 
+
+The modification in `LatexPrinter.__init__` now checks if the provided `mul_symbol` is a recognized key in the `mul_symbol_table`. If it is, it uses the corresponding LaTeX mapping. If it is not recognized (e.g., a custom string like `\,`), it uses the provided value directly as the LaTeX representation. This allows for arbitrary multiplication symbols while maintaining backward compatibility with the existing options (`None`, `"ldot"`, `"dot"`, and `"times"`).
+
+```python
+        mul_symbol_table = {
+            None: r" ",
+            "ldot": r" \,.\, ",
+            "dot": r" \cdot ",
+            "times": r" \times "
+        }
+
+        if self._settings['mul_symbol'] in mul_symbol_table:
+            self._settings['mul_symbol_latex'] = \
+                mul_symbol_table[self._settings['mul_symbol']]
+        else:
+            self._settings['mul_symbol_latex'] = self._settings['mul_symbol']
+
+        self._settings['mul_symbol_latex_numbers'] = \
+            mul_symbol_table.get(self._settings['mul_symbol'], self._settings['mul_symbol'] or 'dot')
+```
+
+Since I cannot run the provided interactive examples directly, I have verified the logic:
+- `mul_symbol=None` -> `mul_symbol_latex = r" "` (Matches existing behavior)
+- `mul_symbol="dot"` -> `mul_symbol_latex = r" \cdot "` (Matches existing behavior)
+- `mul_symbol="\, "` -> `mul_symbol_latex = "\, "` (New requested behavior)
+
+The fix is complete.

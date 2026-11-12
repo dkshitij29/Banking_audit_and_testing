@@ -1,0 +1,26 @@
+I have identified the root cause of the crash: when a `QuerySet` instance's `query` attribute is manually replaced (e.g., by unpickling a `sql.Query` object from a `.values()` or `.values_list()` call), the `_iterable_class` remains set to the default `ModelIterable`. Consequently, during evaluation, it tries to construct model instances from dictionary-like data instead of yielding dictionaries, leading to the reported `AttributeError`.
+
+I will fix this by updating the `QuerySet.query` setter in `django/db/models/query.py` to automatically update `_iterable_class` and `_fields` based on the properties of the assigned query.
+
+Specifically, I will update the setter to:
+1. Check if the new query has `values_select` or `annotation_select`.
+2. If so, set `_iterable_class` to `ValuesIterable`.
+3. Also ensure `_fields` is populated correctly if it's currently `None`.
+
+I'll start by carefully reading the exact indentation and content of the `query` setter to perform the replacement.
+
+```python
+    @query.setter
+    def query(self, value):
+        if self._deferred_filter:
+            negate, args, kwargs = self._deferred_filter
+            self._filter_or_exclude_inplace(negate, args, kwargs)
+            self._deferred_filter = None
+        self._query = value
+        if value.values_select or value.annotation_select:
+            if self._fields is None:
+                self._fields = value.values_select + value.annotation_select
+            self._iterable_class = ValuesIterable
+```
+
+Applying the fix now.

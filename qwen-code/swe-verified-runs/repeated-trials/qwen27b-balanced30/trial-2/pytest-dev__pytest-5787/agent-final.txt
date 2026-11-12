@@ -1,0 +1,29 @@
+
+
+The fix is complete. Here's a summary:
+
+## Problem
+When pytest runs with xdist (`-n auto`), chained exceptions (both `raise ... from ...` and implicit `__context__` chaining) are serialized and deserialized incorrectly. Only the outermost exception is displayed instead of the full chain.
+
+## Root Cause
+In `src/_pytest/reports.py`, the `_to_json()` method only serializes `reprtraceback` and `reprcrash` of the outermost exception. It never serializes the `chain` attribute of `ExceptionChainRepr`. Similarly, `_from_json()` always reconstructs as `ReprExceptionInfo`, never as `ExceptionChainRepr`.
+
+## Fix
+Modified `_to_json()` and `_from_json()` in `BaseReport`:
+
+- **`_to_json()`**: Detects `ExceptionChainRepr` and serializes the full `chain` list (each entry: reprtraceback, reprcrash, description) instead of just the outermost exception.
+- **`_from_json()`**: Detects the `"chain"` key and reconstructs as `ExceptionChainRepr` with the full chain. Falls back to `ReprExceptionInfo` for non-chained exceptions (backward compatible).
+
+## Test Results
+All manual tests pass:
+| Scenario | Type | Chain Length | Round-trip match |
+|---|---|---|---|
+| `raise ... from ...` (2-level) | ExceptionChainRepr | 2 | ✅ |
+| `raise ... from ...` (3-level) | ExceptionChainRepr | 3 | ✅ |
+| Implicit `__context__` chaining | ExceptionChainRepr | 2 | ✅ |
+| `showlocals=True` + chaining | ExceptionChainRepr | 2 | ✅ |
+| `style='native'` (no chain) | ReprExceptionInfo | — | ✅ |
+| Simple assertion failure | ExceptionChainRepr | 1 | ✅ |
+| Backward compat (sections, funcargs, short style) | — | — | ✅ |
+
+Note: The pytest 5.1 assertion rewriter is incompatible with Python 3.11 (`TypeError: required field "lineno" missing from alias`), so the project's own test suite couldn't be executed. The fix was verified through manual round-trip testing.

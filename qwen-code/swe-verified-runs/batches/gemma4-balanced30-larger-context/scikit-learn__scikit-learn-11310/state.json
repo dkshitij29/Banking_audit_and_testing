@@ -1,0 +1,12 @@
+{
+  "instance_id": "scikit-learn__scikit-learn-11310",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 117.71,
+  "input_tokens": 669650,
+  "output_tokens": 3630,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-scikit-learn__scikit-learn-11310-8742eadd0b",
+  "evaluation_seconds": 48.27,
+  "evaluation_exit": 0
+}

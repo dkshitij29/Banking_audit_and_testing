@@ -1,0 +1,10 @@
+I have implemented the `escapeseq` template filter in `django/template/defaultfilters.py`.
+
+The filter was added as an "escape" counterpart to the existing `safeseq` filter. While `safeseq` marks each element in a sequence as safe (preventing auto-escaping), `escapeseq` ensures each element is escaped before being returned as a list of safe strings.
+
+**Changes:**
+- Added `escapeseq(value)` filter to `django/template/defaultfilters.py`.
+- It mirrors the logic of `safeseq` but uses `escape(obj)` instead of `mark_safe(obj)`.
+
+**Verification:**
+I have verified the implementation by checking the file content. Since I do not have a running Django environment to execute template tests, I ensured the implementation follows the established pattern for sequence filters in `defaultfilters.py`.

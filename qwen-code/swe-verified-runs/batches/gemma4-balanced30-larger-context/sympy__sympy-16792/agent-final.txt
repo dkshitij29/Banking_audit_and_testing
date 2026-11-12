@@ -1,0 +1,80 @@
+I have analyzed the code and identified the root cause.
+
+The issue is in `CCodeGen.get_prototype`. When generating the C prototype, it determines the type of each argument by calling `arg.get_datatype('C')`. If an argument (like a `MatrixSymbol`) does not appear in the expression, the `Routine` object's `arg_list` will contain an `InputArgument` for it, but the codegen logic doesn't have enough information to know it should be an array unless it's explicitly linked to a dimension in the expression.
+
+Specifically, in `CCodeGen.get_prototype`:
+```python
+    def get_prototype(self, routine):
+        ...
+        type_args = []
+        for arg in routine.arguments:
+            name = self.printer.doprint(arg.name)
+            if arg.dimensions or isinstance(arg, ResultBase):
+                type_args.append((arg.get_datatype('C'), "*%s" % name))
+            else:
+                type_args.append((arg.get_datatype('C'), name))
+        arguments = ", ".join([ "%s %s" % t for t in type_args])
+        return "%s %s(%s)" % (ctype, routine.name, arguments)
+```
+If `arg.dimensions` is empty (which it is for an unused `MatrixSymbol`), it defaults to a scalar type (e.g., `double x` instead of `double *x`).
+
+To fix this, we should ensure that `InputArgument` objects that represent matrices (like `MatrixSymbol`) are correctly identified as arrays even when they don't appear in the expression.
+
+I will modify `CCodeGen.get_prototype` to check if the argument's name corresponds to a matrix symbol, which should imply array dimensions.
+
+Wait, a better approach is to check if the argument was intended to be a matrix. In `Routine.__init__`, symbols are collected. If a `MatrixSymbol` is passed in `arguments`, it should ideally preserve its "matrix-ness".
+
+Actually, looking at `Routine.__init__`, it doesn't store whether a symbol was a `MatrixSymbol` or just a `Symbol` if it's not in the expression.
+
+Let's look at `autowrap.py` again. It calls `code_gen.routine('autofunc', expr, args)`. The `args` passed here are the ones the user wants in the signature.
+
+If I change `CCodeGen.get_prototype` to check if the argument is a `MatrixSymbol` (or if its name is in `array_symbols` if I can pass that info), that would work. But `get_prototype` only receives the `routine` object.
+
+In `Routine.__init__`, we can distinguish between `Symbol` and `MatrixSymbol` for the arguments.
+
+I'll start by modifying `CCodeGen.get_prototype` to be more robust. I'll check if the argument name's corresponding symbol in the routine's context is a `MatrixSymbol`.
+
+Wait, the `Routine` object has `arguments` which are `InputArgument` objects. `InputArgument` inherits from `Variable`. `Variable` stores the `name` (which is the symbol) and `dimensions`.
+
+If `autowrap` is called with `args=(x,)` where `x` is a `MatrixSymbol`, the `InputArgument` should ideally have `dimensions` set. Let's see how `make_routine` / `routine` handles this.
+
+In `codegen.py` line 633:
+```python
+        for symbol in sorted(symbols, key=str):
+            if symbol in array_symbols:
+                dims = []
+                array = array_symbols[symbol]
+                for dim in array.shape:
+                    dims.append((S.Zero, dim - 1))
+                metadata = {'dimensions': dims}
+            else:
+                metadata = {}
+
+            arg_list.append(InputArgument(symbol, **metadata))
+```
+`array_symbols` is populated from `expressions.atoms(Indexed)` and `expressions.atoms(MatrixSymbol)`. If the symbol is not in the expression, it's not in `array_symbols`, so `metadata` is empty, and `InputArgument` gets no `dimensions`.
+
+The fix should be to ensure that if the user provides `args` to `autowrap`, we preserve the dimensions of those symbols even if they aren't in the expression.
+
+I will modify `CCodeGen.get_prototype` to check if the argument is a `MatrixSymbol` by checking its type if possible, or I'll modify the `routine` creation to preserve dimensions.
+
+Actually, the easiest fix is in `CCodeGen.get_prototype`. Since `arg.name` is the symbol, we can check if it's a `MatrixSymbol`.
+
+```python
+    def get_prototype(self, routine):
+        ...
+        type_args = []
+        for arg in routine.arguments:
+            name = self.printer.doprint(arg.name)
+            # Check if the symbol is a MatrixSymbol
+            if arg.dimensions or isinstance(arg.name, MatrixSymbol):
+                type_args.append((arg.get_datatype('C'), "*%s" % name))
+            else:
+                type_args.append((arg.get_datatype('C'), name))
+        ...
+```
+However, `arg.name` in `InputArgument` is the symbol itself. If it's a `MatrixSymbol`, `isinstance(arg.name, MatrixSymbol)` should work.
+
+Let's verify this. In `autowrap.py`, `x = MatrixSymbol('x', 2, 1)`. `x` is a `MatrixSymbol`.
+
+I will apply this fix.

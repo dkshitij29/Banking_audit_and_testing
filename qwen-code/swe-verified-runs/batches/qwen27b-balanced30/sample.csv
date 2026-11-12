@@ -1,0 +1,31 @@
+instance_id,difficulty_group,difficulty,repo,base_commit
+pydata__xarray-6992,hard,>4 hours,pydata/xarray,45c0a114e2b7b27b83c9618bc05b36afac82183c
+django__django-11885,hard,1-4 hours,django/django,04ac9b45a34440fa447feb6ae934687aacbfc5f4
+sympy__sympy-13798,medium,15 min - 1 hour,sympy/sympy,7121bdf1facdd90d05b6994b4c2e5b2865a4638a
+django__django-13449,hard,1-4 hours,django/django,2a55431a5678af52f669ffe7dff3dd0bd21727f8
+matplotlib__matplotlib-20826,medium,15 min - 1 hour,matplotlib/matplotlib,a0d2e399729d36499a1924e5ca5bc067c8396810
+matplotlib__matplotlib-24570,easy,<15 min fix,matplotlib/matplotlib,8f0003ae902952372824c9917975fb372c026a42
+django__django-16560,hard,1-4 hours,django/django,51c9bb7cd16081133af4f0ab6d06572660309730
+sympy__sympy-18211,medium,15 min - 1 hour,sympy/sympy,b4f1aa3540fe68d078d76e78ba59d022dd6df39f
+scikit-learn__scikit-learn-11310,easy,<15 min fix,scikit-learn/scikit-learn,553b5fb8f84ba05c8397f26dd079deece2b05029
+django__django-14404,easy,<15 min fix,django/django,de32fe83a2e4a20887972c69a0693b94eb25a88b
+django__django-11299,easy,<15 min fix,django/django,6866c91b638de5368c18713fa851bfe56253ea55
+django__django-13346,medium,15 min - 1 hour,django/django,9c92924cd5d164701e2514e1c2d6574126bd7cc2
+django__django-16116,easy,<15 min fix,django/django,5d36a8266c7d5d1994d7a7eeb4016f80d9cb0401
+django__django-11551,medium,15 min - 1 hour,django/django,7991111af12056ec9a856f35935d273526338c1f
+pylint-dev__pylint-8898,hard,1-4 hours,pylint-dev/pylint,1f8c4d9eb185c16a2c1d881c054f015e1c2eb334
+django__django-14011,hard,1-4 hours,django/django,e4430f22c8e3d29ce5d9d0263fba57121938d06d
+sympy__sympy-18199,hard,1-4 hours,sympy/sympy,ba80d1e493f21431b4bf729b3e0452cd47eb9566
+pytest-dev__pytest-5787,hard,1-4 hours,pytest-dev/pytest,955e54221008aba577ecbaefa15679f6777d3bf8
+django__django-13315,medium,15 min - 1 hour,django/django,36bc47069ce071e80c8129500de3b8664d2058a7
+django__django-16877,medium,15 min - 1 hour,django/django,98f6ada0e2058d67d91fb6c16482411ec2ca0967
+sympy__sympy-16792,medium,15 min - 1 hour,sympy/sympy,09786a173e7a0a488f46dd6000177c23e5d24eed
+django__django-10880,easy,<15 min fix,django/django,838e432e3e5519c5383d12018e6c78f8ec7833c1
+sympy__sympy-13480,easy,<15 min fix,sympy/sympy,f57fe3f4b3f2cab225749e1b3b38ae1bf80b62f0
+sympy__sympy-23262,medium,15 min - 1 hour,sympy/sympy,fdc707f73a65a429935c01532cd3970d3355eab6
+django__django-15554,medium,15 min - 1 hour,django/django,59ab3fd0e9e606d7f0f7ca26609c06ee679ece97
+pytest-dev__pytest-10356,hard,1-4 hours,pytest-dev/pytest,3c1534944cbd34e8a41bc9e76818018fadefc9a1
+django__django-14376,easy,<15 min fix,django/django,d06c5b358149c02a62da8a5469264d05f29ac659
+django__django-16263,hard,1-4 hours,django/django,321ecb40f4da842926e1bc07e11df4aabe53ca4b
+django__django-13406,easy,<15 min fix,django/django,84609b3205905097d7d3038d32e6101f012c0619
+psf__requests-5414,easy,<15 min fix,psf/requests,39d0fdd9096f7dceccbc8f82e1eda7dd64717a8e

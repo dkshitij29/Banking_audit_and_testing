@@ -1,0 +1,43 @@
+diff --git a/test_clear_shared.py b/test_clear_shared.py
+new file mode 100644
+index 0000000000..c68d342887
+--- /dev/null
++++ b/test_clear_shared.py
+@@ -0,0 +1,37 @@
++import matplotlib.pyplot as plt
++
++fig, axes = plt.subplots(2, 2, sharex=True, sharey=True)
++
++# Check initial state: non-first-col and non-last-row axes should have
++# their tick labels hidden
++ax_first = axes[0, 0]
++ax_second = axes[0, 1]
++ax_third = axes[1, 0]
++ax_fourth = axes[1, 1]
++
++# Before clear: non-bottom rows should have labelbottom=False
++# Non-first-col should have labelleft=False
++print("Before clear:")
++print(f"  axes[0,0] xaxis label1On (left/bottom): {axes[0,0].xaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[1,0] xaxis label1On (left/bottom): {axes[1,0].xaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[0,1] yaxis label1On (left): {axes[0,1].yaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[1,1] yaxis label1On (left): {axes[1,1].yaxis._major_tick_kw.get('label1On', True)}")
++
++for ax in axes.flatten():
++    ax.clear()
++
++print("After clear:")
++print(f"  axes[0,0] xaxis label1On: {axes[0,0].xaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[1,0] xaxis label1On: {axes[1,0].xaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[0,1] yaxis label1On: {axes[0,1].yaxis._major_tick_kw.get('label1On', True)}")
++print(f"  axes[1,1] yaxis label1On: {axes[1,1].yaxis._major_tick_kw.get('label1On', True)}")
++
++# The bug: after clear(), label1On should still be False for non-bottom/non-first-col
++assert axes[1, 0].xaxis._major_tick_kw.get('label1On', True) == False, \
++    "axes[1,0] xaxis should have label1On=False but has %r" % axes[1, 0].xaxis._major_tick_kw.get('label1On')
++assert axes[0, 1].yaxis._major_tick_kw.get('label1On', True) == False, \
++    "axes[0,1] yaxis should have label1On=False but has %r" % axes[0, 1].yaxis._major_tick_kw.get('label1On')
++assert axes[1, 1].yaxis._major_tick_kw.get('label1On', True) == False, \
++    "axes[1,1] yaxis should have label1On=False but has %r" % axes[1, 1].yaxis._major_tick_kw.get('label1On')
++
++print("All assertions passed!")

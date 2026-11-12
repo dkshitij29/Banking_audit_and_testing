@@ -1,0 +1,12 @@
+{
+  "instance_id": "pylint-dev__pylint-8898",
+  "status": "ambiguous_failure",
+  "agent_exit": 0,
+  "agent_seconds": 673.24,
+  "input_tokens": 1908674,
+  "output_tokens": 15544,
+  "changed_tests": true,
+  "evaluation_run_id": "trial-3-11a4c85349-pylint-dev__pylint-8898-a00c6ff7ae",
+  "evaluation_seconds": 36.78,
+  "evaluation_exit": 0
+}

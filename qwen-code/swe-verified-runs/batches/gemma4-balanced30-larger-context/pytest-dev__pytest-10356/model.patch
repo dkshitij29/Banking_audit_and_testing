@@ -1,0 +1,55 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..af2ca964b
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,49 @@
++import pytest
++import itertools
++
++class BaseMeta(type):
++    @property
++    def pytestmark(self):
++        return (
++            getattr(self, "_pytestmark", []) +
++            list(itertools.chain.from_iterable(getattr(x, "_pytestmark", []) for x in self.__mro__))
++        )
++
++    @pytestmark.setter
++    def pytestmark(self, value):
++        self._pytestmark = value
++
++class Base(object):
++    # Without this metaclass, foo and bar markers override each other, and test_dings
++    # will only have one marker
++    # With the metaclass, test_dings will have both
++    __metaclass__ = BaseMeta if hasattr(object, "__metaclass__") else None
++    if not hasattr(object, "__metaclass__"):
++        Base = type("Base", (object,), {"_pytestmark": []}, bases=(object,))
++        # This is a bit tricky to do perfectly for Python 3 without a real metaclass
++        # Let's just use a standard class and see how pytest behaves without the metaclass.
++        pass
++
++# Let's simplify the repro to match the issue description exactly
++class SimpleBase(object):
++    pass
++
++@pytest.mark.foo
++class Foo(SimpleBase):
++    pass
++
++@pytest.mark.bar
++class Bar(SimpleBase):
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        # This test should have both markers, foo and bar.
++        # In practice markers are resolved using MRO (so foo wins)
++        pass
++
++if __name__ == "__main__":
++    import sys
++    import os
++    # We'll run this via pytest
++    print("Reproduction script created.")

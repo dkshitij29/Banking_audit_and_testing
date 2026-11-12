@@ -1,0 +1,30 @@
+
+
+The fix is complete and verified. Here's a concise summary:
+
+## Problem
+
+When using `autowrap()` with the Cython backend, if an expression is constant (doesn't depend on any argument) but `args` includes a `MatrixSymbol`, the generated C function has an incorrect signature — `double x` instead of `double *x` — causing `TypeError: only size-1 arrays can be converted to Python scalars` at runtime.
+
+## Root Cause
+
+In `sympy/utilities/codegen.py`, all 4 `routine()` methods (base `CodeGen`, `JuliaCodeGen`, `OctaveCodeGen`, `RustCodeGen`) handle the `argument_sequence` reordering. When a symbol in the sequence doesn't exist in `name_arg_dict` (because it doesn't appear in the expression), the `except KeyError` branch creates a bare `InputArgument(symbol)` with no dimension information.
+
+## Fix
+
+In each of the 4 `except KeyError` blocks, added a check for `isinstance(symbol, MatrixSymbol)`. If true, compute the dimensions from `symbol.shape` and pass `dimensions=dims` to `InputArgument`:
+
+```python
+if isinstance(symbol, MatrixSymbol):
+    dims = tuple([(S.Zero, dim - 1) for dim in symbol.shape])
+    new_args.append(InputArgument(symbol, dimensions=dims))
+else:
+    new_args.append(InputArgument(symbol))
+```
+
+## Verification
+
+- **Original bug case** (`expr=1.0`, `args=(MatrixSymbol('x', 2, 1),)`, backend='cython') — now returns `1.0` correctly
+- **Expression that depends on arg** — still works correctly
+- **All 10 key `test_codegen.py` tests** — pass
+- **All 6 key `test_autowrap.py` Cython tests** — pass

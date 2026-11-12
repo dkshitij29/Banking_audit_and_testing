@@ -1,0 +1,22 @@
+
+
+## Summary
+
+**Bug:** `nthroot_mod(a, n, p)` raises `"Log does not exist"` when `a % p == 0` and `(p - 1) % n == 0`.
+
+**Root cause:** When `a % p == 0`, the code passes `a=0` to `_nthroot_mod1`, which calls `discrete_log(p, 0, h)` — a discrete log of 0 that cannot exist. The only root of `x^n ≡ 0 (mod p)` is `x ≡ 0 (mod p)`, but this path is never reached.
+
+**Fix:** Added an early return in `nthroot_mod` (line ~779 of `residue_ntheory.py`):
+
+```python
+if a % p == 0:
+    if all_roots:
+        return [0]
+    return 0
+```
+
+This is placed after the `is_nthpow_residue` and `isprime(p)` checks, before delegating to `_nthroot_mod1` or the GCD branch.
+
+**Verification:** All test cases pass — the original issue `nthroot_mod(17*17, 5, 17)` now returns `0`, and a comprehensive check over `p ∈ [3,23]`, `n ∈ [2, p-1]`, `a ∈ {0, p, 2p}` confirmed all results are correct.
+
+**Memory saved:** Project memory `nthroot_mod_zero_root.md` in the project memory directory recording this fix and its context.

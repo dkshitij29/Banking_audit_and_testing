@@ -1,0 +1,11 @@
+
+
+The fix is complete. Here's a concise summary:
+
+**Bug**: Report serialization (`_to_json` / `_from_json` in `src/_pytest/reports.py`) only captured the outermost exception's `reprtraceback` and `reprcrash`. The `chain` attribute of `ExceptionChainRepr` (containing chained exceptions from `raise ... from ...` and implicit `__context__`) was completely lost during serialization. This caused xdist to show only the final exception in the chain.
+
+**Fix** (`src/_pytest/reports.py`):
+- **Serialization**: When `longrepr` is an `ExceptionChainRepr`, the full `chain` list is serialized as a list of dicts (each with `reprtraceback`, `reprcrash`, `descr`).
+- **Deserialization**: When the serialized data contains a `chain` key, reconstructs an `ExceptionChainRepr` with all entries properly deserialized instead of a flat `ReprExceptionInfo`.
+
+**Tests**: All 4 standalone tests pass — simple exceptions, `__cause__` chains (`from`), `__context__` chains, and `longreprtext` round-trip preservation.

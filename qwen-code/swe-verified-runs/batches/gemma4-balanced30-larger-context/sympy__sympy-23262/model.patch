@@ -1,0 +1,20 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..ed38705364
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,14 @@
++import inspect
++from sympy import lambdify
++
++def test_lambdify_tuple():
++    # Test with one element
++    source_1 = inspect.getsource(lambdify([], tuple([1])))
++    print(f"Tuple with one element:\n{source_1}")
++    
++    # Test with two elements
++    source_2 = inspect.getsource(lambdify([], tuple([1, 2])))
++    print(f"Tuple with two elements:\n{source_2}")
++
++if __name__ == "__main__":
++    test_lambdify_tuple()

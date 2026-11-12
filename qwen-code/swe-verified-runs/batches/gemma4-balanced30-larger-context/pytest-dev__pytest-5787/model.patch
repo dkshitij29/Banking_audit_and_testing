@@ -1,0 +1,90 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..d6828c4a5
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,19 @@
++import pytest
++
++def test_chained_exception_with_from():
++    try:
++        try:
++            raise ValueError(11)
++        except Exception as e1:
++            raise ValueError(12) from e1
++    except Exception as e2:
++        raise ValueError(13) from e2
++
++def test_chained_exception_without_from():
++    try:
++        try:
++            raise ValueError(21)
++        except Exception:
++            raise ValueError(22)
++    except Exception:
++        raise ValueError(23)
+diff --git a/test_serialization_logic.py b/test_serialization_logic.py
+new file mode 100644
+index 000000000..90b54eb3a
+--- /dev/null
++++ b/test_serialization_logic.py
+@@ -0,0 +1,59 @@
++from _pytest._code.code import ExceptionInfo
++from _pytest._code.code import ReprTraceback
++from _pytest._code.code import ReprEntry
++from _pytest._code.code import ReprExceptionInfo
++from _pytest._code.code import ReprFileLocation
++from _pytest._code.code import ReprFuncArgs
++from _pytest._code.code import ReprLocals
++from _pytest.reports import TestReport
++
++def test_serialization_chain():
++    try:
++        try:
++            raise ValueError(11)
++        except Exception as e1:
++            raise ValueError(12) from e1
++    except Exception as e2:
++        raise ValueError(13) from e2
++
++    excinfo = ExceptionInfo.from_current()
++    
++    # Replicate TestReport logic
++    # In reports.py, TestReport._to_json calls disassembled_report(self)
++    # where self.longrepr is the excinfo.
++    
++    # Let's see what the traceback entries look like
++    print(f"Traceback entries count: {len(excinfo.traceback)}")
++    for i, entry in enumerate(excinfo.traceback):
++        print(f"Entry {i}: {entry}")
++        # Check if there's any link to cause
++        # In a chained exception, the first entry's 'rawentry' might have tb_next
++        # and the last entry's 'rawentry' might have __cause__ 
++        # or the ExceptionInfo object itself has __cause__
++        
++    # Now let's see the 'disassembled_report' logic
++    # It copies the __dict__ of ReprTraceback and ReprFileLocation etc.
++    
++    # If we manually do what _to_json does:
++    # reprtraceback = excinfo.traceback.__dict__.copy() 
++    # Wait, excinfo.traceback is a list of TracebackEntry objects.
++    # The actual ReprTraceback is what's inside longrepr for a TestReport.
++    
++    # Let's simulate TestReport construction:
++    # In TestReport.from_item_and_call:
++    # longrepr = item.repr_failure(excinfo)
++    # item.repr_failure usually returns an ExceptionInfo object (or similar)
++    # but in recent pytest it might be wrapped or modified.
++    
++    # Let's just check the ExceptionInfo object's traceback directly.
++    # A chained exception's last entry's rawentry's __cause__ is the previous exception.
++    
++    last_entry = excinfo.traceback[-1]
++    raw_last = last_entry._rawentry
++    if hasattr(raw_last, "__cause__") and raw_last.__cause__ is not None:
++        print(f"Last rawentry has __cause__: {type(raw_last.__cause__).__name__}")
++    else:
++        print("Last rawentry has no __cause__")
++
++if __name__ == "__main__":
++    test_serialization_chain()

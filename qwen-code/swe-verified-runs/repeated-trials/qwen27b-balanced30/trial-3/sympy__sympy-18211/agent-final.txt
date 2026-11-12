@@ -1,0 +1,26 @@
+
+
+All 117 solveset tests pass. The fix is verified.
+
+## Summary
+
+**Problem:** `Eq(n*cos(n) - 3*sin(n), 0).as_set()` raised `NotImplementedError` instead of returning a `ConditionSet`.
+
+**Root cause:** The `Equality` class inherited `Relational._eval_as_set`, which calls `solve_univariate_inequality` — a function designed for inequalities, not equations. When it couldn't solve the equation, it raised `NotImplementedError`.
+
+**Fix:** Added an `_eval_as_set` method to the `Equality` class in `sympy/core/relational.py` that calls `solveset` instead, which properly returns a `ConditionSet` for unsolvable equations.
+
+**Change:** One new method added to `Equality` class (~7 lines):
+```python
+def _eval_as_set(self):
+    from sympy.solvers.solveset import solveset
+    syms = self.free_symbols
+    assert len(syms) == 1
+    x = syms.pop()
+    return solveset(self.lhs - self.rhs, x, S.Reals)
+```
+
+**Test results:**
+- Original issue: `Eq(n*cos(n) - 3*sin(n), 0).as_set()` → `ConditionSet(n, Eq(n*cos(n) - 3*sin(n), 0), Reals)` ✓
+- `sympy/core/tests/test_relational.py`: 55 passed, 2 xfailed ✓
+- `sympy/solvers/tests/test_solveset.py`: 117 passed, 2 skipped, 12 xfailed ✓

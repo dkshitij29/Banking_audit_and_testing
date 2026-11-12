@@ -1,0 +1,34 @@
+
+
+All 61 `MakeMigrationsTests` pass, including `test_makemigrations_check`. The fix is complete and verified.
+
+## Summary
+
+**Problem:** `makemigrations --check` was writing migration files to disk even though `--check` should only check for unapplied model changes and exit with a non-zero status — consistent with how `migrate --check` and `optimizemigration --check` behave (they exit without performing their primary action).
+
+**Fix:** In `django/core/management/commands/makemigrations.py`, wrapped the file-writing calls (`write_migration_files` / `write_to_last_migration_files`) behind `if not check_changes:` so that `--check` mode skips writing migration files entirely and only exits with status 1 when changes are detected.
+
+**Before:**
+```python
+        else:
+            if self.update:
+                self.write_to_last_migration_files(changes)
+            else:
+                self.write_migration_files(changes)
+            if check_changes:
+                sys.exit(1)
+```
+
+**After:**
+```python
+        else:
+            if not check_changes:
+                if self.update:
+                    self.write_to_last_migration_files(changes)
+                else:
+                    self.write_migration_files(changes)
+            if check_changes:
+                sys.exit(1)
+```
+
+**Test results:** All 61 `MakeMigrationsTests` pass, including `test_makemigrations_check`.

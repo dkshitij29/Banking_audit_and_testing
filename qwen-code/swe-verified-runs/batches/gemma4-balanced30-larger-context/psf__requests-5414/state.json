@@ -1,0 +1,12 @@
+{
+  "instance_id": "psf__requests-5414",
+  "status": "ambiguous_failure",
+  "agent_exit": 0,
+  "agent_seconds": 94.28,
+  "input_tokens": 269180,
+  "output_tokens": 3523,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-psf__requests-5414-3d2b388861",
+  "evaluation_seconds": 84.49,
+  "evaluation_exit": 0
+}

@@ -1,0 +1,25 @@
+
+
+The implementation is complete. Here's a concise summary:
+
+**Change made:** Added `escapeseq` template filter in `django/template/defaultfilters.py` (right after `safeseq`, lines 502-508).
+
+```python
+@register.filter(is_safe=True)
+def escapeseq(value):
+    """
+    An "escape" filter for sequences. Escape each element in the sequence,
+    individually, after converting them to strings. Return a list with the
+    results.
+    """
+    return [conditional_escape(obj) for obj in value]
+```
+
+**How it works:** It mirrors `safeseq` but in reverse — instead of marking each element as safe, it applies `conditional_escape()` to each element. This means:
+- Unsafe strings are HTML-escaped (`&` → `&amp;`, `<` → `&lt;`, etc.)
+- Already-safe strings (e.g., from `mark_safe()`) pass through unchanged (no double-escaping)
+- Results are `SafeString` instances, so the filter is marked `is_safe=True`
+
+**Usage:** `{{ some_list|escapeseq|join:"," }}` — each item is escaped before joining, which is useful when autoescape is off.
+
+**Testing:** Core logic verified with standalone tests covering basic escaping, safe-string passthrough, mixed inputs, empty lists, and integers. The venv lacks pip so I couldn't run Django's full test suite, but the syntax parses correctly and the filter is registered.

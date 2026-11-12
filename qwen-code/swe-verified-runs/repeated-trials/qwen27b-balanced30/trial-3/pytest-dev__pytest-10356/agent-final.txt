@@ -1,0 +1,19 @@
+
+
+Now let me provide a concise summary of the fix.
+
+## Summary
+
+**Problem:** When a class inherits from multiple base classes that each have `@pytest.mark.*` decorators, only the first parent's marks (by MRO order) are retained. For example, `class TestDings(Foo, Bar)` where `Foo` has `@pytest.mark.foo` and `Bar` has `@pytest.mark.bar` — the test only gets `foo`, losing `bar`.
+
+**Root cause:** `get_unpacked_marks()` in `src/_pytest/mark/structures.py` uses `getattr(obj, "pytestmark", [])`, which returns the first match via MRO — so sibling base classes' marks are never seen.
+
+**Fix (3 files changed):**
+
+1. **`src/_pytest/mark/structures.py`** — Added `get_unpacked_marks_from_mro()` that walks the class's `__mro__`, collecting `pytestmark` from each class's own `__dict__` (bypassing MRO resolution), deduplicating by mark name with most-derived class winning. For non-class objects, it falls back to the original `get_unpacked_marks()`.
+
+2. **`src/_pytest/python.py`** — Replaced both call sites of `get_unpacked_marks()` with `get_unpacked_marks_from_mro()` (lines ~315 and ~1718).
+
+3. **`testing/test_mark.py`** — Added `test_mark_decorator_multiple_baseclasses_merged` verifying that marks from two independent base classes are both inherited, and that a child class's own marks are included.
+
+**Test results:** All 89 mark tests pass (89 passed, 1 xfailed). The new test confirms `test_foo` gets marks `a` and `b` from two base classes.

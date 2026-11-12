@@ -1,0 +1,8 @@
+I have fixed the issue by adding a space after `'DISTINCT'` in `django/db/models/aggregates.py`. This ensures that when a `Count` annotation with both a `filter` (which is converted to a `Case` expression) and `distinct=True` is used, the generated SQL correctly includes a space between `DISTINCT` and the `CASE` statement (e.g., `COUNT(DISTINCT CASE ...)` instead of `COUNT(DISTINCTCASE ...)`).
+
+### Verification
+I attempted to run the project's tests. Since I am in a host checkout and don't have a live database connection configured to run full Django tests, I cannot perform a full integration test. However, the code change directly addresses the string concatenation issue described in the bug report.
+
+### Summary of Changes
+- Modified `django/db/models/aggregates.py`:
+  - Changed `extra_context['distinct'] = 'DISTINCT' if self.distinct else ''` to `extra_context['distinct'] = 'DISTINCT ' if self.distinct else ''` in the `as_sql` method.

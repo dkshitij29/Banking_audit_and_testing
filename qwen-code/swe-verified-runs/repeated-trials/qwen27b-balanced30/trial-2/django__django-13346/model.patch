@@ -1,0 +1,31 @@
+diff --git a/django/db/models/fields/json.py b/django/db/models/fields/json.py
+index fafc1beee8..3de464b94b 100644
+--- a/django/db/models/fields/json.py
++++ b/django/db/models/fields/json.py
+@@ -455,6 +455,18 @@ class KeyTransformIRegex(CaseInsensitiveMixin, KeyTransformTextLookupMixin, look
+     pass
+ 
+ 
++class KeyTransformIn(lookups.In):
++    def process_rhs(self, compiler, connection):
++        if self.rhs_is_direct_value():
++            sqls, sqls_params = self.batch_process_rhs(compiler, connection)
++            if connection.vendor in ('mysql', 'oracle', 'sqlite'):
++                func = "JSON_EXTRACT(%s, '$')"
++                sqls = [func % sql for sql in sqls]
++            placeholder = '(' + ', '.join(sqls) + ')'
++            return (placeholder, sqls_params)
++        return super().process_rhs(compiler, connection)
++
++
+ class KeyTransformNumericLookupMixin:
+     def process_rhs(self, compiler, connection):
+         rhs, rhs_params = super().process_rhs(compiler, connection)
+@@ -480,6 +492,7 @@ class KeyTransformGte(KeyTransformNumericLookupMixin, lookups.GreaterThanOrEqual
+ 
+ 
+ KeyTransform.register_lookup(KeyTransformExact)
++KeyTransform.register_lookup(KeyTransformIn)
+ KeyTransform.register_lookup(KeyTransformIExact)
+ KeyTransform.register_lookup(KeyTransformIsNull)
+ KeyTransform.register_lookup(KeyTransformIContains)

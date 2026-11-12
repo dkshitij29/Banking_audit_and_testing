@@ -1,0 +1,10 @@
+I have analyzed the code and identified the issue. In `django/db/models/aggregates.py`, the `Aggregate.template` was defined as `%(function)s(%(distinct)s%(expressions)s)`. When using `Count` with `distinct=True` and a `filter` on a database backend that doesn't support the `FILTER` clause, Django emulates the filter using a `Case` expression. This resulted in the SQL `COUNT(DISTINCTCASE WHEN ...)` because there was no space between the `DISTINCT` keyword and the `CASE` expression.
+
+I have updated the template to `%(function)s(%(distinct)s %(expressions)s)` to ensure a space is always included between `DISTINCT` and the expressions.
+
+```python
+class Aggregate(Func):
+    template = '%(function)s(%(distinct)s %(expressions)s)'
+```
+
+This fix correctly separates the keywords, resolving the syntax error.

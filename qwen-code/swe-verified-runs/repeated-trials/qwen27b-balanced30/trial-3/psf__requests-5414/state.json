@@ -1,0 +1,12 @@
+{
+  "instance_id": "psf__requests-5414",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 440.26,
+  "input_tokens": 922273,
+  "output_tokens": 11453,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-11a4c85349-psf__requests-5414-e2e7e40e1d",
+  "evaluation_seconds": 30.36,
+  "evaluation_exit": 0
+}

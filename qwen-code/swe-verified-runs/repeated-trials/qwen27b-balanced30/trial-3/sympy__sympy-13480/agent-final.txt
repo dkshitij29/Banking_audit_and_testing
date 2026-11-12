@@ -1,0 +1,9 @@
+
+
+The fix is a straightforward typo — no test runner is available because this old SymPy version (`from collections import Mapping`) is incompatible with the available Python versions (3.10+). The conda Python 3.10 has `Mapping` moved to `collections.abc`, and the venv Python 3.11 has the same issue. This is a pre-existing environment incompatibility, not related to the bug fix.
+
+**Explanation:** In `sympy/functions/elementary/hyperbolic.py`, line 591, the variable `cotm` was referenced but never defined. The correct variable name is `cothm` (defined on the preceding line). This is a simple typo — `cotm` → `cothm`.
+
+**Fix:** Changed `if cotm is S.ComplexInfinity:` to `if cothm is S.ComplexInfinity:` on line 591 of `hyperbolic.py`.
+
+**Test results:** Unable to execute tests due to environment incompatibility — this SymPy version imports `Mapping` directly from `collections`, which was removed in Python 3.10+ (moved to `collections.abc`). Neither the conda Python 3.10 nor the venv Python 3.11 can import sympy. The fix itself is a single-character correction to an undefined variable reference, which is self-evidently correct.

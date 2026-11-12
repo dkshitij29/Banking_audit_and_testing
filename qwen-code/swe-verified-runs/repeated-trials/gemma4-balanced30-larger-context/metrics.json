@@ -1,0 +1,34 @@
+{
+  "cases": 30,
+  "planned_attempts": 90,
+  "finished_attempts": 90,
+  "complete": true,
+  "status_counts": {
+    "unresolved": 54,
+    "empty_patch": 14,
+    "resolved": 13,
+    "ambiguous_failure": 9
+  },
+  "successful_attempts_so_far": 13,
+  "avg_score_percent": 14.44,
+  "pass_at_3_percent": 23.33,
+  "pass_power_3_percent": 6.67,
+  "pass_rate_percent": 23.33,
+  "pass_rate_definition": "Alias of empirical pass@3 (at least one success); source definition unverified.",
+  "definitions": {
+    "avg_score": "successful attempts / (3 * cases)",
+    "pass@3": "cases with at least one success / cases",
+    "pass^3": "cases with three successes / cases"
+  },
+  "usage": {
+    "input_tokens": 63750573,
+    "output_tokens": 636453,
+    "available_attempts": 87
+  },
+  "trial_paths": [
+    "/home/mahesh/DAT/swe-verified-runs/batches/gemma4-balanced30-larger-context",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/gemma4-balanced30-larger-context/trial-2",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/gemma4-balanced30-larger-context/trial-3"
+  ],
+  "limitations": "Host generation, Docker evaluation. Fresh workspaces/sessions; shared Qwen settings or memory may affect independence. No explicit sampling or reasoning settings enforced. Terminal failures count as unsuccessful; inspect infrastructure errors separately."
+}

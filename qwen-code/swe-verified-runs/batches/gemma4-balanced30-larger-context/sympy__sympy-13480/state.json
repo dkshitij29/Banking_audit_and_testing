@@ -1,0 +1,13 @@
+{
+  "instance_id": "sympy__sympy-13480",
+  "status": "unresolved",
+  "agent_exit": 1,
+  "agent_seconds": 48.33,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 303613,
+  "output_tokens": 1385,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-sympy__sympy-13480-e73c9e8fc4",
+  "evaluation_seconds": 39.44,
+  "evaluation_exit": 0
+}

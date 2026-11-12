@@ -1,0 +1,7 @@
+
+
+The project memory index was created this turn. Here's what I saved:
+
+- **Project memory**: `django-10880-fix.md` — Records the DISTINCT space fix for issue #10880.
+
+No new user-level memories to save this turn (the benchmark context is already captured from the prior turn).

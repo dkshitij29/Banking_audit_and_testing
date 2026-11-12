@@ -1,0 +1,47 @@
+diff --git a/sympy/printing/latex.py b/sympy/printing/latex.py
+index ad4d7d9613..d3599d1440 100644
+--- a/sympy/printing/latex.py
++++ b/sympy/printing/latex.py
+@@ -156,11 +156,14 @@ def __init__(self, settings=None):
+             "times": r" \times "
+         }
+ 
+-        self._settings['mul_symbol_latex'] = \
+-            mul_symbol_table[self._settings['mul_symbol']]
++        ms = self._settings.get('mul_symbol')
++        self._settings['mul_symbol_latex'] = mul_symbol_table.get(ms, ms)
+ 
+-        self._settings['mul_symbol_latex_numbers'] = \
+-            mul_symbol_table[self._settings['mul_symbol'] or 'dot']
++        if ms in mul_symbol_table:
++            self._settings['mul_symbol_latex_numbers'] = \
++                mul_symbol_table[ms or 'dot']
++        else:
++            self._settings['mul_symbol_latex_numbers'] = ms if ms else mul_symbol_table['dot']
+ 
+         self._delim_dict = {'(': ')', '[': ']'}
+ 
+diff --git a/test_fix.py b/test_fix.py
+new file mode 100644
+index 0000000000..9d26904509
+--- /dev/null
++++ b/test_fix.py
+@@ -0,0 +1,18 @@
++from sympy.printing.latex import LatexPrinter
++
++settings = {'mul_symbol': '\\,'}
++printer = LatexPrinter(settings)
++
++print(f"mul_symbol_latex: {printer._settings['mul_symbol_latex']}")
++print(f"mul_symbol_latex_numbers: {printer._settings['mul_symbol_latex_numbers']}")
++
++# Test existing options
++settings_times = {'mul_symbol': 'times'}
++printer_times = LatexPrinter(settings_times)
++print(f"times_latex: {printer_times._settings['mul_symbol_latex']}")
++print(f"times_numbers: {printer_times._settings['mul_symbol_latex_numbers']}")
++
++settings_none = {'mul_symbol': None}
++printer_none = LatexPrinter(settings_none)
++print(f"none_latex: {printer_none._settings['mul_symbol_latex']}")
++print(f"none_numbers: {printer_none._settings['mul_symbol_latex_numbers']}")

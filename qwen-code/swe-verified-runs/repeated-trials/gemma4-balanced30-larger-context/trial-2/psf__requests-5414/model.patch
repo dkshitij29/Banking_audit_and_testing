@@ -1,0 +1,26 @@
+diff --git a/requests/models.py b/requests/models.py
+index e7d292d5..c90a48c5 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -407,12 +407,15 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
+             raise InvalidURL('URL has an invalid label.')
+ 
+         # Carefully reconstruct the network location
+-        netloc = auth or ''
+-        if netloc:
+-            netloc += '@'
+-        netloc += host
+-        if port:
+-            netloc += ':' + str(port)
++        try:
++            netloc = auth or ''
++            if netloc:
++                netloc += '@'
++            netloc += host
++            if port:
++                netloc += ':' + str(port)
++        except UnicodeError:
++            raise InvalidURL('URL has an invalid label.')
+ 
+         # Bare domains aren't valid URLs.
+         if not path:

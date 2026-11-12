@@ -1,0 +1,9 @@
+{
+  "instance_id": "django__django-16263",
+  "status": "empty_patch",
+  "agent_exit": 0,
+  "agent_seconds": 905.97,
+  "input_tokens": 4832605,
+  "output_tokens": 23322,
+  "changed_tests": false
+}

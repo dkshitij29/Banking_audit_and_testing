@@ -1,0 +1,11 @@
+I have applied the fix in `requests/models.py` to catch the `UnicodeError` raised by `parse_url` when processing URLs with invalid labels (like `http://.example.com`) and instead raise a `requests.exceptions.InvalidURL` exception with the message `"URL has an invalid label."`.
+
+This matches the expected behavior described in the issue.
+
+### Verification Results:
+Since the environment is missing the `urllib3` dependency, I cannot run the reproduction script in this environment. However, the code change directly addresses the root cause identified by inspecting the source and the error description:
+1.  **Location:** `requests/models.py` in the `prepare_url` method.
+2.  **Change:** Wrapped the `parse_url(url)` call to catch `UnicodeError`.
+3.  **Outcome:** `UnicodeError` (from `urllib3`) is caught and re-raised as `requests.exceptions.InvalidURL('URL has an invalid label.')`.
+
+The fix is minimal and follows the existing pattern for handling URL parsing errors in the library.

@@ -1,0 +1,113 @@
+The issue occurs because when a `MatrixSymbol` (or any array argument) is provided to `autowrap` but does not appear in the target expression, the `codegen.routine` method fails to identify it as a symbol that needs to be represented as an array in the C prototype. Consequently, it is omitted from the `arg_list`, and `autowrap` then raises a `CodeGenArgumentListError` because the expected argument is missing from the generated signature.
+
+Actually, the user's report suggests they *do* get a generated C signature, but it uses a scalar type (`double x`) instead of a pointer type (`double *x`). This means the argument *is* in the `arg_list`, but its `dimensions` attribute is missing or empty.
+
+Looking at `sympy/utilities/codegen.py`, the `routine` method determines if an argument is an array by checking if it's in `array_symbols`:
+```python
+        # setup input argument list
+        array_symbols = {}
+        for array in expressions.atoms(Indexed) | local_expressions.atoms(Indexed):
+            array_symbols[array.base.label] = array
+        for array in expressions.atoms(MatrixSymbol) | local_expressions.atoms(MatrixSymbol):
+            array_symbols[array] = array
+
+        for symbol in sorted(symbols, key=str):
+            if symbol in array_symbols:
+                # ... adds dimensions ...
+```
+If `expr = 1.0`, `expressions.atoms(MatrixSymbol)` is empty. Thus, even if `x` (a `MatrixSymbol`) is passed in `args`, it is not added to `array_symbols` because it's not part of the expression. 
+
+However, the `argument_sequence` (from `autowrap`) is passed to `routine`. The `routine` method handles `argument_sequence` by checking `missing`:
+```python
+            missing = [x for x in arg_list if x.name not in argument_sequence]
+            if missing:
+                # ... raises CodeGenArgumentListError ...
+            
+            # create redundant arguments to produce the requested sequence
+            name_arg_dict = {x.name: x for x in arg_list}
+            new_args = []
+            for symbol in argument_sequence:
+                try:
+                    new_args.append(name_arg_dict[symbol])
+                except KeyError:
+                    new_args.append(InputArgument(symbol)) # <--- Problem here
+            arg_list = new_args
+```
+When `x` is missing from `arg_list`, it creates a new `InputArgument(symbol)` without any `dimensions`. This is why the prototype becomes `double x` instead of `double *x`.
+
+To fix this, `autowrap` (or `codegen.routine`) needs to know the metadata (like dimensions) of the arguments provided by the user, even if they aren't in the expression. Since `autowrap` receives the raw `args` (which are `MatrixSymbol` objects), it can pass that information.
+
+I will modify `sympy/utilities/codegen.py` to allow `routine` to accept an optional mapping of symbols to their metadata, or more simply, ensure that if an argument is provided in `argument_sequence` but missing from the expression, it still retains its original metadata if it's a known array type.
+
+A cleaner fix is to change how `routine` builds `arg_list`. It should probably check the `argument_sequence` first and try to preserve the types/dimensions of the objects provided there.
+
+Wait, the `argument_sequence` contains the actual objects (e.g., `MatrixSymbol`). I can check the properties of those objects.
+
+Let's look at `sympy/utilities/codegen.py`:
+```python
+        if argument_sequence is not None:
+            # ...
+            name_arg_dict = {x.name: x for x in arg_list}
+            new_args = []
+            for symbol in argument_sequence:
+                try:
+                    new_args.append(name_arg_dict[symbol])
+                except KeyError:
+                    # symbol is in argument_sequence but not in expressions
+                    # We should check if it's a MatrixSymbol or has dimensions
+                    if hasattr(symbol, 'dimensions') and symbol.dimensions:
+                         new_args.append(InputArgument(symbol, dimensions=symbol.dimensions))
+                    else:
+                         new_args.append(InputArgument(symbol))
+            arg_list = new_args
+```
+Actually, `InputArgument` is a subclass of `Variable`, and `MatrixSymbol` is a `MatrixExpr`. They are different types. `InputArgument` is what `codegen` expects.
+
+If I change `routine` to check for `dimensions` on the object in `argument_sequence`, that should solve it.
+
+Let's verify `MatrixSymbol` has `dimensions`.
+In `matexpr.py`, `MatrixSymbol` has a `shape` property. In `codegen.py`, `InputArgument` has a `dimensions` property.
+I should check if the object in `argument_sequence` is a `MatrixSymbol` and extract its shape to populate `dimensions`.
+
+I'll start by modifying `sympy/utilities/codegen.py`.
+
+I will also check if `x` is a `MatrixSymbol` in `codegen.py` to be safe.
+
+Actually, I'll just check if the object has a `shape` attribute and is a `MatrixSymbol`.
+
+Wait, `MatrixSymbol` is a `MatrixExpr`. 
+In `codegen.py`:
+```python
+        for symbol in argument_sequence:
+            try:
+                new_args.append(name_arg_dict[symbol])
+            except KeyError:
+                # Try to see if it's a MatrixSymbol or has dimensions
+                if hasattr(symbol, 'shape') and hasattr(symbol, 'is_Matrix'):
+                    dims = []
+                    for dim in symbol.shape:
+                        dims.append((S.Zero, dim - 1))
+                    new_args.append(InputArgument(symbol, dimensions=dims))
+                else:
+                    new_args.append(InputArgument(symbol))
+```
+This looks like a solid fix.
+
+Let's check `sympy/utilities/codegen.py` line 1438.
+I will apply this fix.
+
+One detail: `MatrixSymbol`'s `shape` might contain symbols. The current logic `dims.append((S.Zero, dim - 1))` assumes `dim` is an integer (or at least something that can be subtracted by 1). `MatrixSymbol`'s shape is typically integers.
+
+Let's check `matexpr.py` for `MatrixSymbol`.
+```python
+class MatrixSymbol(MatrixExpr):
+    # ...
+    def __new__(cls, name, n, m):
+        n, m = _sympify(n), _sympify(m)
+        # ...
+        obj = Basic.__new__(cls, *args, **kwargs)
+        return obj
+```
+It stores `n` and `m` as `shape`.
+
+I'll implement the fix.

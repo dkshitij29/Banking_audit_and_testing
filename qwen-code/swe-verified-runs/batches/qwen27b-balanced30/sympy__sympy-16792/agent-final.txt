@@ -1,0 +1,27 @@
+
+
+I've completed the fix. Here's a summary:
+
+## Fix Summary
+
+**Issue:** `autowrap` with cython backend fails when array arguments (`MatrixSymbol`) don't appear in the wrapped expression. The generated C function signature incorrectly uses `double x` instead of `double *x`.
+
+**Root Cause:** In `sympy/utilities/codegen.py`, when building the argument list from `argument_sequence`, symbols not found in the expression's free symbols fall through to `InputArgument(symbol)` — without dimension metadata. This happens in 4 code generator classes (base `CodeGen`, `JuliaCodeGen`, `OctaveCodeGen`, `RustCodeGen`).
+
+**Fix:** In `sympy/utilities/codegen.py`, all 4 occurrences of the fallback `InputArgument(symbol)` now check if the symbol is a `MatrixSymbol` or `IndexedBase` and attach the proper `dimensions` metadata:
+
+```python
+except KeyError:
+    metadata = {}
+    if isinstance(symbol, (MatrixSymbol, IndexedBase)):
+        dims = tuple([(S.Zero, dim - 1) for dim in symbol.shape])
+        metadata = {'dimensions': dims}
+    new_args.append(InputArgument(symbol, **metadata))
+```
+
+**Test Results:**
+- All 55 codegen tests pass
+- All 12 autowrap tests pass
+- Manual verification confirms:
+  - C code now generates `double *x` (not `double x`)
+  - Cython wrapper now uses `np.ndarray[np.double_t, ndim=2] x` (not scalar `double x`)

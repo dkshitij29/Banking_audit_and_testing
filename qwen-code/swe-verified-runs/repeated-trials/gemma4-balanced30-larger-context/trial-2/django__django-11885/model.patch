@@ -1,0 +1,72 @@
+diff --git a/django/db/models/deletion.py b/django/db/models/deletion.py
+index ae82d26340..076ecd40ee 100644
+--- a/django/db/models/deletion.py
++++ b/django/db/models/deletion.py
+@@ -310,21 +310,62 @@ class Collector:
+                     )
+ 
+             # fast deletes
++            # Group fast deletes by model
++            fast_deletes_by_model = {}
+             for qs in self.fast_deletes:
+-                count = qs._raw_delete(using=self.using)
+-                deleted_counter[qs.model._meta.label] += count
++                model_label = qs.model._meta.label
++                fast_deletes_by_model.setdefault(model_label, []).append(qs)
++
++            for model_label, qss in fast_deletes_by_model.items():
++                if len(qss) == 1:
++                    count = qss[0]._raw_delete(using=self.using)
++                    deleted_counter[model_label] += count
++                else:
++                    # Combine multiple querysets for the same model using OR
++                    # We can combine them by using Q objects.
++                    from django.db.models import Q
++                    combined_q = Q()
++                    for qs in qss:
++                        combined_q |= qs.query.where
++                    
++                    query = sql.DeleteQuery(self.data[model_label]._meta.concrete_model)
++                    query.where = combined_q
++                    count = query.do_query(query.get_meta().db_table, query.where, using=self.using)
++                    deleted_counter[model_label] += count
+ 
+             # update fields
++            # Group field updates by model and instances
++            field_updates_by_model_and_instances = {}
+             for model, instances_for_fieldvalues in self.field_updates.items():
+                 for (field, value), instances in instances_for_fieldvalues.items():
+-                    query = sql.UpdateQuery(model)
+-                    query.update_batch([obj.pk for obj in instances],
+-                                       {field.name: value}, self.using)
++                    # Use a frozenset of IDs as a key to group by instance set
++                    instance_ids = tuple(sorted(list(instances)))
++                    key = (model, instance_ids)
++                    field_updates_by_model_and_instances.setdefault(key, []).append((field, value))
++
++            for (model, instance_ids), updates in field_updates_by_model_and_instances.items():
++                query = sql.UpdateQuery(model)
++                update_dict = {}
++                for field, value in updates:
++                    update_dict[field.name] = value
++                query.update_batch(list(instance_ids), update_dict, self.using)
++                # The count of updated rows isn't directly returned by update_batch 
++                # in the same way as delete_batch, but for field updates we 
++                # don't need to track counts in deleted_counter anyway.
+ 
+             # reverse instance collections
+             for instances in self.data.values():
+                 instances.reverse()
+ 
++            # delete instances
++            for model, instances in self.data.items():
++                query = sql.DeleteQuery(model)
++                pk_list = [obj.pk for obj in instances]
++                count = query.delete_batch(pk_list, self.using)
++                deleted_counter[model._meta.label] += count
++            for instances in self.data.values():
++                instances.reverse()
++
+             # delete instances
+             for model, instances in self.data.items():
+                 query = sql.DeleteQuery(model)

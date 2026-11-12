@@ -1,0 +1,17 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..5a723e00
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,11 @@
++import xarray as xr
++import numpy as np
++
++try:
++    ds = xr.Dataset(coords={"a": ("x", [1, 2, 3]), "b": ("x", ['a', 'b', 'c'])})
++    ds.set_index(z=['a', 'b']).reset_index("z", drop=True)
++    print("Success")
++except Exception as e:
++    print(f"Error: {e}")
++    import traceback
++    traceback.print_exc()

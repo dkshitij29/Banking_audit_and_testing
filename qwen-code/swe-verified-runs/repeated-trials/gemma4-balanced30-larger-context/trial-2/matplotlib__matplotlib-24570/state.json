@@ -1,0 +1,9 @@
+{
+  "instance_id": "matplotlib__matplotlib-24570",
+  "status": "empty_patch",
+  "agent_exit": 0,
+  "agent_seconds": 134.16,
+  "input_tokens": 1463474,
+  "output_tokens": 4293,
+  "changed_tests": false
+}

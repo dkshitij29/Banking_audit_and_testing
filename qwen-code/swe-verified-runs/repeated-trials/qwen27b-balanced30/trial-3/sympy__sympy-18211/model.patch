@@ -1,0 +1,19 @@
+diff --git a/sympy/core/relational.py b/sympy/core/relational.py
+index f581bfa3c4..6b1c1daa72 100644
+--- a/sympy/core/relational.py
++++ b/sympy/core/relational.py
+@@ -671,6 +671,14 @@ def as_poly(self, *gens, **kwargs):
+         '''
+         return (self.lhs - self.rhs).as_poly(*gens, **kwargs)
+ 
++    def _eval_as_set(self):
++        from sympy.solvers.solveset import solveset
++        # self is univariate and periodicity(self, x) in (0, None)
++        syms = self.free_symbols
++        assert len(syms) == 1
++        x = syms.pop()
++        return solveset(self.lhs - self.rhs, x, S.Reals)
++
+ 
+ Eq = Equality
+ 

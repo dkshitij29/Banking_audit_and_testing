@@ -1,0 +1,59 @@
+I have analyzed the `JSONField` implementation and the database backends.
+
+### Analysis of the Issue
+The issue arises because `__in` lookups on a `JSONField` key transform do not produce the expected SQL on MySQL, Oracle, and SQLite. 
+
+In `django/db/models/fields/json.py`:
+- `KeyTransform` defines how to extract a value from a JSON object.
+- `KeyTransformExact` (which `__in` inherits from) handles the comparison.
+- For `__in`, the `rhs` (right-hand side) is a list of values.
+
+When `__in` is used with a key transform (e.g., `our_field__key__in=[0]`):
+1. `KeyTransform.preprocess_lhs` identifies the path to the key.
+2. `KeyTransformExact.process_rhs` is called.
+3. In `KeyTransformExact.process_rhs`:
+   - For **Oracle**, it manually constructs `JSON_QUERY` or `JSON_VALUE` calls for each item in the `rhs` list, but it sets `rhs_params = []` and performs string interpolation (`rhs = rhs % tuple(func)`). This fails because the `rhs` string contains `%s` placeholders that are not being filled by the params list.
+   - For **SQLite**, it wraps each item in `JSON_EXTRACT(%s, '$')`.
+   - For **MySQL**, it wraps each item in `JSON_EXTRACT(%s, '$')`.
+
+### The Root Cause
+The `KeyTransformExact.process_rhs` method handles the list of values differently depending on the database, but the logic for **Oracle** is fundamentally broken for `__in` because it tries to do string interpolation on a template that is expected to be filled by parameters. Specifically, the `rhs` string is built with `%s` but the parameters are cleared, or the interpolation happens in a way that doesn't play well with how Django handles the final SQL construction.
+
+Actually, looking closer at `KeyTransformExact.process_rhs`:
+```python
+    def process_rhs(self, compiler, connection):
+        if isinstance(self.rhs, KeyTransform):
+            return super(lookups.Exact, self).process_rhs(compiler, connection)
+        rhs, rhs_params = super().process_rhs(compiler, connection)
+        # Treat None lookup values as null.
+        if rhs == '%s' and rhs_params == [None]:
+            rhs_params = ['null']
+        if connection.vendor == 'mysql':
+            func = ["JSON_EXTRACT(%s, '$')"] * len(rhs_params)
+            rhs = rhs % tuple(func)
+        return rhs, rhs_params
+```
+For `__in`, `super().process_rhs` (from `lookups.Exact`) returns a string like `IN (%s, %s, ...)` and a list of params.
+- For **MySQL**, it replaces `%s` with `JSON_EXTRACT(%s, '$')`, which results in `IN (JSON_EXTRACT(%s, '$'), JSON_EXTRACT(%s, '$'))`. This is correct.
+- For **Oracle**, it doesn't have a special case in `process_rhs` but the `KeyTransform` itself handles Oracle. Wait, `KeyTransformExact` *does* have an Oracle case:
+```python
+        elif connection.vendor == 'oracle':
+            func = []
+            for value in rhs_params:
+                value = json.loads(value)
+                function = 'JSON_QUERY' if isinstance(value, (list, dict)) else 'JSON_VALUE'
+                func.append("%s('%s', '$.value')" % (
+                    function,
+                    json.dumps({'value': value}),
+                ))
+            rhs = rhs % tuple(func)
+            rhs_params = []
+```
+If `rhs` is `IN (%s, %s)`, and `rhs_params` is `[1, 2]`, `rhs % tuple(func)` will try to inject the `JSON_VALUE` strings into the `IN` clause. However, since `rhs_params` is then set to `[]`, the final SQL will have no parameters to bind to the `%s` inside the `JSON_VALUE` calls if they were intended to be parameters. 
+
+Actually, the bug is simpler: `KeyTransformExact`'s `process_rhs` doesn't handle the `IN` clause correctly for these backends because it expects to be able to substitute the `rhs` string, but for `__in`, the `rhs` is already a complex `IN (...)` expression.
+
+### Plan
+I need to fix `process_rhs` in `KeyTransformExact` to correctly handle the transformation of the `rhs` for all items in the `__in` list for MySQL, Oracle, and SQLite.
+
+I will start by creating a reproduction script to confirm the behavior.

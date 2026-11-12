@@ -1,0 +1,20 @@
+
+
+The implementation is complete. Here's a summary:
+
+**Change made:** Added the `escapeseq` template filter in `django/template/defaultfilters.py`, immediately after the existing `safeseq` filter.
+
+**Implementation:** A single function that iterates over a sequence and applies `escape()` to each element, returning a list. This is the inverse of `safeseq` (which marks each element as safe).
+
+**Key behavior:**
+- `{{ some_list|escapeseq|join:"," }}` — escapes each item before joining, useful when `autoescape` is off
+- Each escaped item is a `SafeString`, so when `autoescape` is on, there's no double-escaping
+- Unlike `conditional_escape`, `escape()` always re-escapes (consistent with the documented behavior for `escape` vs `safe`)
+
+**Test results** (all passed):
+- Autoescape off: `['&', '<', '>']` → `&amp;,&lt;,&gt;`
+- Autoescape on: `['&', '<']` → `&amp;,&lt;` (no double-escape because `escape()` returns `SafeString`)
+- Already-escaped values: `['&amp;', '<b>']` → `&amp;amp;,&lt;b&gt;` (re-escapes, as expected)
+- Empty sequence: `[]` → `''`
+- Plain strings: `['hello', 'world']` → `hello,world`
+- Existing `safeseq` tests: still pass

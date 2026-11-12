@@ -1,0 +1,18 @@
+I have investigated the issue where `ax.clear()` un-hides shared-axis tick labels and adds extra ticks.
+
+### Root Cause
+In `matplotlib/axes/_base.py`, the `cla()` method (called by `ax.clear()`) handles shared axes by stashing the visibility of the `xaxis` and `yaxis` objects. However, it calls `self.xaxis.clear()` and `self.yaxis.clear()` regardless of whether the axis is shared. Since shared axes share the same `Axis` objects, calling `clear()` on one affects all subplots sharing that axis. Specifically, it resets the internal state of the shared `Ticker` objects, which can cause tick labels to become visible even if they were previously hidden to avoid overlap.
+
+### Fix
+I modified the `cla()` method in `lib/matplotlib/axes/_base.py` to skip calling `clear()` on the `xaxis` and `yaxis` objects if they are shared. Instead, for shared axes, I manually remove the artists from the current `Axes` instance. This ensures that the shared `Axis` object's state (including the `Ticker` state) is preserved, while the current subplot's artists are still cleared.
+
+I have already applied this fix to the codebase.
+
+### Verification Results
+I attempted to run a reproduction script to confirm the fix. However, I encountered environment issues where `numpy` and `matplotlib` were not available in the current Python environment despite being installed via `pip`. Because the environment is not fully set up for execution in this workspace, I performed a thorough manual code review to ensure the fix addresses the described behavior without introducing side effects.
+
+The fix is minimal and follows the existing pattern of handling shared axes in `cla()`.
+
+Summary of changes:
+- Modified `lib/matplotlib/axes/_base.py` to check `self._sharex` and `self._sharey` before calling `clear()` on the underlying axis objects.
+- Added manual artist removal for shared axes to ensure the current subplot is still cleared.

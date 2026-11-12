@@ -1,0 +1,101 @@
+diff --git a/src/_pytest/mark/structures.py b/src/_pytest/mark/structures.py
+index 800a25c92..59a759af3 100644
+--- a/src/_pytest/mark/structures.py
++++ b/src/_pytest/mark/structures.py
+@@ -363,6 +363,28 @@ def get_unpacked_marks(obj: object) -> Iterable[Mark]:
+     return normalize_mark_list(mark_list)
+ 
+ 
++def get_unpacked_marks_from_mro(obj: object) -> List[Mark]:
++    """Obtain the unpacked marks from an object considering MRO.
++
++    Walks the MRO of the object and collects marks from all base classes,
++    deduplicating by mark name (most-derived class wins).
++    """
++    if not inspect.isclass(obj):
++        return list(get_unpacked_marks(obj))
++
++    seen: Set[str] = set()
++    result: List[Mark] = []
++    for cls in reversed(obj.__mro__):
++        mark_list = cls.__dict__.get("pytestmark", [])
++        if not isinstance(mark_list, list):
++            mark_list = [mark_list]
++        for mark in normalize_mark_list(mark_list):
++            if mark.name not in seen:
++                seen.add(mark.name)
++                result.append(mark)
++    return result
++
++
+ def normalize_mark_list(
+     mark_list: Iterable[Union[Mark, MarkDecorator]]
+ ) -> Iterable[Mark]:
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index 3db877506..a91e517f6 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -64,6 +64,7 @@ from _pytest.main import Session
+ from _pytest.mark import MARK_GEN
+ from _pytest.mark import ParameterSet
+ from _pytest.mark.structures import get_unpacked_marks
++from _pytest.mark.structures import get_unpacked_marks_from_mro
+ from _pytest.mark.structures import Mark
+ from _pytest.mark.structures import MarkDecorator
+ from _pytest.mark.structures import normalize_mark_list
+@@ -311,7 +312,7 @@ class PyobjMixin(nodes.Node):
+             # XXX evil hack
+             # used to avoid Function marker duplication
+             if self._ALLOW_MARKERS:
+-                self.own_markers.extend(get_unpacked_marks(self.obj))
++                self.own_markers.extend(get_unpacked_marks_from_mro(self.obj))
+                 # This assumes that `obj` is called before there is a chance
+                 # to add custom keys to `self.keywords`, so no fear of overriding.
+                 self.keywords.update((mark.name, mark) for mark in self.own_markers)
+@@ -1714,7 +1715,7 @@ class Function(PyobjMixin, nodes.Item):
+         # Note: when FunctionDefinition is introduced, we should change ``originalname``
+         # to a readonly property that returns FunctionDefinition.name.
+ 
+-        self.own_markers.extend(get_unpacked_marks(self.obj))
++        self.own_markers.extend(get_unpacked_marks_from_mro(self.obj))
+         if callspec:
+             self.callspec = callspec
+             self.own_markers.extend(callspec.marks)
+diff --git a/testing/test_mark.py b/testing/test_mark.py
+index 65f2581bd..335ad2451 100644
+--- a/testing/test_mark.py
++++ b/testing/test_mark.py
+@@ -561,6 +561,33 @@ class TestFunctional:
+         items, rec = pytester.inline_genitems(p)
+         self.assert_markers(items, test_foo=("a", "b", "c"), test_bar=("a", "b", "d"))
+ 
++    def test_mark_decorator_multiple_baseclasses_merged(self, pytester: Pytester) -> None:
++        """#10356 - MRO is considered when collecting marks from base classes."""
++        p = pytester.makepyfile(
++            """
++            import pytest
++
++            @pytest.mark.a
++            class Base(object): pass
++
++            @pytest.mark.b
++            class Base2(object): pass
++
++            class Test1(Base, Base2):
++                def test_foo(self): pass
++
++            @pytest.mark.c
++            class Test2(Base, Base2):
++                def test_bar(self): pass
++
++            class Test3(Base, Base2):
++                @pytest.mark.a
++                def test_baz(self): pass
++        """
++        )
++        items, rec = pytester.inline_genitems(p)
++        self.assert_markers(items, test_foo=("a", "b"), test_bar=("a", "b", "c"), test_baz=("a", "b"))
++
+     def test_mark_closest(self, pytester: Pytester) -> None:
+         p = pytester.makepyfile(
+             """

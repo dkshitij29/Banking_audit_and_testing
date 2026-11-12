@@ -1,0 +1,15 @@
+diff --git a/repro_issue.py b/repro_issue.py
+new file mode 100644
+index 00000000..1d265034
+--- /dev/null
++++ b/repro_issue.py
+@@ -0,0 +1,9 @@
++import xarray as xr
++import numpy as np
++
++try:
++    ds = xr.Dataset(coords={"a": ("x", [1, 2, 3]), "b": ("x", ['a', 'b', 'c'])})
++    ds.set_index(z=['a', 'b']).reset_index("z", drop=True)
++    print("Success!")
++except Exception as e:
++    print(f"Caught expected error: {type(e).__name__}: {e}")

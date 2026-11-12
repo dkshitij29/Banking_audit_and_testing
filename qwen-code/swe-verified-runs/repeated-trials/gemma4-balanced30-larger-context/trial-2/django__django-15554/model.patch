@@ -1,0 +1,72 @@
+diff --git a/django/db/models/sql/datastructures.py b/django/db/models/sql/datastructures.py
+index 1edf040e82..0949a67acf 100644
+--- a/django/db/models/sql/datastructures.py
++++ b/django/db/models/sql/datastructures.py
+@@ -162,8 +162,7 @@ class Join:
+         return hash(self.identity)
+ 
+     def equals(self, other):
+-        # Ignore filtered_relation in equality check.
+-        return self.identity[:-1] == other.identity[:-1]
++        return self.identity == other.identity
+ 
+     def demote(self):
+         new = self.relabeled_clone({})
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..47eb66430b
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,52 @@
++from django.conf import settings
++from django.db import models
++from django.db.models import FilteredRelation, Q, F, Case, When
++from django.db import connections
++import os
++
++# Mock settings
++if not settings.configured:
++    settings.configure(
++        DATABASES={'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}},
++        INSTALLED_APPS=[],
++    )
++
++models.setup()
++
++class MyRelation(models.Model):
++    is_all = models.BooleanField(default=False)
++    zone = models.CharField(max_length=10, null=True, blank=True)
++    price = models.DecimalField(max_digits=10, decimal_places=2)
++
++class Parent(models.Model):
++    zone = models.CharField(max_length=10)
++
++# Create sample data
++Parent.objects.create(zone="A")
++MyRelation.objects.create(is_all=True, price=100)
++MyRelation.objects.create(zone="A", price=50)
++
++# The user's query
++qs = Parent.objects.all()
++annotated_qs = qs.alias(
++    relation_zone=FilteredRelation(
++        "myrelation__nested",
++        condition=Q(myrelation__nested__zone=F("zone"))
++    ),
++    relation_all=FilteredRelation(
++        "myrelation__nested",
++        condition=Q(myrelation__nested__is_all=True)
++    ),
++    price_zone=F("relation_zone__price")
++).annotate(
++    price_final=Case(
++        When(
++            price_zone__isnull=True,
++            then=F("relation_all__price"),
++        ),
++        default=F("price_zone")
++    )
++)
++
++print("Query SQL:")
++print(annotated_qs.query)
