@@ -1,0 +1,18 @@
+I have successfully updated `django/db/backends/mysql/base.py` to use the non-deprecated `database` and `password` keywords.
+
+### Summary of changes:
+In `django/db/backends/mysql/base.py`, the `get_connection_params` method was updated:
+- Replaced `kwargs['db']` with `kwargs['database']`
+- Replaced `kwargs['passwd']` with `kwargs['password']`
+
+These changes align the Django MySQL backend with the latest `mysqlclient` (PyMySQL) requirements, as specified in the issue description.
+
+### Verification Results:
+I manually verified the change in the file:
+```python
+        if settings_dict['NAME']:
+            kwargs['database'] = settings_dict['NAME']
+        if settings_dict['PASSWORD']:
+            kwargs['password'] = settings_dict['PASSWORD']
+```
+No automated test suite was run as I am in a host checkout environment and requested to make the smallest appropriate fix without attempting to rebuild or install missing dependencies.

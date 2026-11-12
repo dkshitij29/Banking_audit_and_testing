@@ -1,0 +1,29 @@
+
+
+All 61 makemigrations tests pass. Here's a concise summary:
+
+**Fix:** In `django/core/management/commands/makemigrations.py`, moved the `if check_changes: sys.exit(1)` check to execute **before** `write_migration_files()` / `write_to_last_migration_files()`. Previously, migration files were written to disk first, then the command exited with code 1. Now it detects changes, exits immediately with code 1, and never writes files.
+
+**Before:**
+```python
+else:
+    if self.update:
+        self.write_to_last_migration_files(changes)
+    else:
+        self.write_migration_files(changes)
+    if check_changes:
+        sys.exit(1)
+```
+
+**After:**
+```python
+else:
+    if check_changes:
+        sys.exit(1)
+    if self.update:
+        self.write_to_last_migration_files(changes)
+    else:
+        self.write_migration_files(changes)
+```
+
+This makes `makemigrations --check` consistent with `migrate --check` and `optimizemigration --check` — all three now exit with a non-zero status when they detect work to do, without performing any destructive action.

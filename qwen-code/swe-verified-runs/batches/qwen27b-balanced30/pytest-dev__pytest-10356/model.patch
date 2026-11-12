@@ -1,0 +1,51 @@
+diff --git a/src/_pytest/mark/structures.py b/src/_pytest/mark/structures.py
+index 800a25c92..19302a4a9 100644
+--- a/src/_pytest/mark/structures.py
++++ b/src/_pytest/mark/structures.py
+@@ -360,9 +360,46 @@ def get_unpacked_marks(obj: object) -> Iterable[Mark]:
+     mark_list = getattr(obj, "pytestmark", [])
+     if not isinstance(mark_list, list):
+         mark_list = [mark_list]
++    if isinstance(obj, type):
++        # For classes, collect marks from all base classes in MRO order.
++        # This ensures that when a class inherits from multiple base classes,
++        # marks from all of them are included, not just the first one found
++        # by getattr (which follows MRO and stops at the first match).
++        mark_list = collect_mro_marks(obj, mark_list)
+     return normalize_mark_list(mark_list)
+ 
+ 
++def collect_mro_marks(cls: type, own_marks: list) -> list:
++    """Collect marks from all classes in the MRO.
++
++    Walks the MRO and collects ``pytestmark`` from each class's own ``__dict__``,
++    deduplicating by mark name (keeping the first occurrence, i.e. the one
++    from the most-derived class).  The marks directly set on ``cls`` (own_marks)
++    are included first, followed by marks from the bases in MRO order.
++    """
++    result: list[Mark] = []
++    seen: set[str] = set()
++    for mark in own_marks:
++        mark_obj = getattr(mark, "mark", mark)
++        assert isinstance(mark_obj, Mark), mark_obj
++        if mark_obj.name not in seen:
++            seen.add(mark_obj.name)
++            result.append(mark_obj)
++
++    for basecls in cls.__mro__[1:]:  # skip cls itself
++        if "pytestmark" not in basecls.__dict__:
++            continue
++        base_marks = basecls.__dict__["pytestmark"]
++        if not isinstance(base_marks, list):
++            base_marks = [base_marks]
++        for mark in base_marks:
++            mark_obj = getattr(mark, "mark", mark)
++            if mark_obj.name not in seen:
++                seen.add(mark_obj.name)
++                result.append(mark_obj)
++    return result
++
++
+ def normalize_mark_list(
+     mark_list: Iterable[Union[Mark, MarkDecorator]]
+ ) -> Iterable[Mark]:

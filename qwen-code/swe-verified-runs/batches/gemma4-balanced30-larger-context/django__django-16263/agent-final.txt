@@ -1,0 +1,18 @@
+I've successfully implemented the fix to strip unused annotations from `count()` queries.
+
+### Changes Made:
+- Modified `Query.get_count` in `django/db/models/sql/query.py` to perform annotation filtering.
+- Added `_filter_annotations_for_count` to identify annotations required by the query's `where` clause, `order_by` clause, or other necessary annotations.
+- Added recursive alias resolution (`_get_referenced_aliases`) to ensure that annotations nested within other used annotations are also preserved.
+- Updated `annotation_select_mask` to stay in sync with the filtered annotations.
+
+### Verification Results:
+The fix ensures that calls like `Book.objects.annotate(Count('chapters')).count()` no longer include the `Count('chapters')` in the resulting SQL, while still producing the correct count.
+
+```python
+# Final summary of the logic added to Query.get_count:
+obj = self.clone()
+obj.add_annotation(Count("*"), alias="__count", is_summary=True)
+obj._filter_annotations_for_count()  # <--- New filtering step
+return obj.get_aggregation(using, ["__count"])["__count"]
+```

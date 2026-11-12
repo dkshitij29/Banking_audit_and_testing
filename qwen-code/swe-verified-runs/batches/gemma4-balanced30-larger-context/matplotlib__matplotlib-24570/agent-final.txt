@@ -1,0 +1,28 @@
+I've identified and fixed the bug where the `align` parameter in `HPacker` (and `VPacker`) was reversed for `top` and `bottom`. The issue was caused by incorrect grouping of alignment options and incorrect offset calculations in `lib/matplotlib/offsetbox.py`.
+
+I've updated `_get_aligned_offsets` to correctly handle:
+- `left` and `bottom` as "start" alignments (offset 0).
+- `right` and `top` as "end" alignments (offset `height - h`).
+- Robust `height` calculation for all alignment types to ensure children fit correctly even when descents vary.
+
+The fix correctly aligns the bottoms of children when `align="bottom"` is specified, which resolves the reported issue.
+
+```python
+<<<<
+    elif align in ["left", "top"]:
+        descent = 0.
+        offsets = [d for h, d in hd_list]
+    elif align in ["right", "bottom"]:
+        descent = 0.
+        offsets = [height - h + d for h, d in hd_list]
+====
+    elif align in ["left", "bottom"]:
+        height = max(h - d for h, d in hd_list) + max(d for h, d in hd_list)
+        descent = max(d for h, d in hd_list)
+        offsets = [0. for h, d in hd_list]
+    elif align in ["right", "top"]:
+        height = max(h - d for h, d in hd_list) + max(d for h, d in hd_list)
+        descent = max(d for h, d in hd_list)
+        offsets = [height - h for h, d in hd_list]
+>>>>
+```

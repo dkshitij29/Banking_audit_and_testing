@@ -1,0 +1,3 @@
+I'll start by examining the `build_where` method in `django/db/models/sql/query.py` and how it handles the `simple_col` argument. The issue seems to stem from inconsistent column qualification when mixing different types of expressions in a `Q` object.
+
+I will also look at how `CheckConstraint` calls this method in `django/db/models/constraints.py`.

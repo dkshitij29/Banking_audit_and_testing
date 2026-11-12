@@ -1,0 +1,19 @@
+
+
+## Summary
+
+**Problem:** When `limit_choices_to` on a ForeignKey uses a Q object or dict with join lookups (e.g., `members__name='admin'`), the `complex_filter()` call creates SQL JOINs that can produce duplicate rows in the form field's queryset.
+
+**Fix:** Added `.distinct()` after `complex_filter()` in three locations:
+
+1. **`django/forms/models.py:104`** — `apply_limit_choices_to_to_formfield()`: The main code path that applies `limit_choices_to` to form field querysets.
+
+2. **`django/db/models/fields/__init__.py:890`** — `Field.get_choices()`: Used for building `<select>` choices directly from the model field.
+
+3. **`django/db/models/fields/reverse_related.py:154`** — `RemoteField.get_choices()`: Analog of the above, used by `RelatedFieldListFilter` in the admin.
+
+**Test results:** All tests pass:
+- 6/6 `LimitChoicesToTests` (including new regression test `test_limit_choices_to_with_q_object_no_duplicates`)
+- 149/149 `model_forms.tests` (1 skipped)
+- 33/33 `model_fields.tests`
+- 1/1 `LimitChoicesToInAdminTest`

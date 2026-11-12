@@ -1,0 +1,20 @@
+
+
+**Explanation:**
+
+Added the `escapeseq` template filter in `django/template/defaultfilters.py`, mirroring the existing `safeseq` filter. The implementation uses `conditional_escape` on each element of the sequence, which:
+- Escapes unsafe strings (e.g., `"&"` → `"&amp;"`)
+- Leaves already-safe strings untouched (no double-escaping)
+
+The filter is marked `is_safe=True` so the escaped results aren't re-escaped by autoescape. This is the exact inverse of `safeseq` — it's useful when autoescape is off and you want to escape individual list items before operations like `join`.
+
+**Files changed:**
+- `django/template/defaultfilters.py` — Added `escapeseq` filter (8 lines)
+- `tests/template_tests/filter_tests/test_escapeseq.py` — Added test file
+
+**Test results:** All 5 inline tests passed:
+- Autoescape off: `"&", "<"` → `"&amp;, &lt;"` (escapes correctly)
+- Autoescape on: no double-escaping
+- `safeseq` still works unchanged
+- Safe strings passed through `escapeseq` are not re-escaped
+- Comparison with unfiltered `join` under autoescape off

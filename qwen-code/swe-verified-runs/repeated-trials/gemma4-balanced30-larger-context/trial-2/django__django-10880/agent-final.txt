@@ -1,0 +1,36 @@
+I have investigated the issue and identified that the query error is caused by a missing space between the `DISTINCT` keyword and the `CASE` expression in the generated SQL when both are used in a `Count` annotation.
+
+I am applying a fix by adding a space to the `DISTINCT` string in the `as_sql` method of the `Aggregate` class.
+
+```python
+# /home/mahesh/DAT/swe-verified-runs/repeated-trials/gemma4-balanced30-larger-context/trial-2/django__django-10880/workspace/django/db/models/aggregates.py
+
+    def as_sql(self, compiler, connection, **extra_context):
+        extra_context['distinct'] = 'DISTINCT ' if self.distinct else ''
+```
+
+This ensures that the resulting SQL template `%(function)s(%(distinct)s%(expressions)s)` correctly renders as `COUNT(DISTINCT CASE ...)` instead of `COUNT(DISTINCTCASE ...)`.
+
+I'll check if there are any other related issues or if this change is sufficient. Since I cannot run the full test suite easily without a full environment setup, I'll verify the logic. The change is minimal and addresses the specific bug reported.
+
+I have already applied the change in the previous turn.
+
+### Verification
+The change was made to:
+`/home/mahesh/DAT/swe-verified-runs/repeated-trials/gemma4-balanced30-larger-context/trial-2/django__django-10880/workspace/django/db/models/aggregates.py`
+
+Old code:
+```python
+    def as_sql(self, compiler, connection, **extra_context):
+        extra_context['distinct'] = 'DISTINCT' if self.distinct else ''
+```
+
+New code:
+```python
+    def as_sql(self, compiler, connection, **extra_context):
+        extra_context['distinct'] = 'DISTINCT ' if self.distinct else ''
+```
+
+This correctly addresses the "DISTINCTCASE" issue.
+
+The issue is fixed. No further actions are required.

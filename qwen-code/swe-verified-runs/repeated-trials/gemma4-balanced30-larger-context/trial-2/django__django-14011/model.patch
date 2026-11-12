@@ -1,0 +1,13 @@
+diff --git a/django/test/testcases.py b/django/test/testcases.py
+index 92f566b7b0..94cd0d5baa 100644
+--- a/django/test/testcases.py
++++ b/django/test/testcases.py
+@@ -1524,6 +1524,8 @@ class LiveServerThread(threading.Thread):
+         if hasattr(self, 'httpd'):
+             # Stop the WSGI server
+             self.httpd.shutdown()
++            import time
++            time.sleep(0.1)
+             self.httpd.server_close()
+         self.join()
+ 

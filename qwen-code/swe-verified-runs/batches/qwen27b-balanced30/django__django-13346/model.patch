@@ -1,0 +1,81 @@
+diff --git a/django/db/models/fields/json.py b/django/db/models/fields/json.py
+index fafc1beee8..0c01480913 100644
+--- a/django/db/models/fields/json.py
++++ b/django/db/models/fields/json.py
+@@ -479,6 +479,47 @@ class KeyTransformGte(KeyTransformNumericLookupMixin, lookups.GreaterThanOrEqual
+     pass
+ 
+ 
++class KeyTransformIn(lookups.In):
++    def process_rhs(self, compiler, connection):
++        db_rhs = getattr(self.rhs, '_db', None)
++        if db_rhs is not None and db_rhs != connection.alias:
++            raise ValueError(
++                "Subqueries aren't allowed across different databases. Force "
++                "the inner query to be evaluated using `list(inner_query)`."
++            )
++
++        if self.rhs_is_direct_value():
++            from django.core.exceptions import EmptyResultSet
++            from django.utils.datastructures import OrderedSet
++            # Remove None from the list as NULL is never equal to anything.
++            try:
++                rhs = OrderedSet(self.rhs)
++                rhs.discard(None)
++            except TypeError:  # Unhashable items in self.rhs
++                rhs = [r for r in self.rhs if r is not None]
++
++            if not rhs:
++                raise EmptyResultSet
++
++            sqls, sqls_params = self.batch_process_rhs(compiler, connection, rhs)
++            if connection.vendor == 'mysql':
++                func = ["JSON_EXTRACT(%s, '$')"] * len(sqls_params)
++                sqls = [f % sql for f, sql in zip(func, sqls)]
++            elif connection.vendor == 'sqlite':
++                func = [
++                    "JSON_EXTRACT(%s, '$')" if value != 'null' else '%s'
++                    for value in sqls_params
++                ]
++                sqls = [f % sql for f, sql in zip(func, sqls)]
++            placeholder = '(' + ', '.join(sqls) + ')'
++            return (placeholder, sqls_params)
++        else:
++            if not getattr(self.rhs, 'has_select_fields', True):
++                self.rhs.clear_select_clause()
++                self.rhs.add_fields(['pk'])
++            return super(lookups.In).process_rhs(compiler, connection)
++
++
+ KeyTransform.register_lookup(KeyTransformExact)
+ KeyTransform.register_lookup(KeyTransformIExact)
+ KeyTransform.register_lookup(KeyTransformIsNull)
+@@ -494,6 +535,7 @@ KeyTransform.register_lookup(KeyTransformLt)
+ KeyTransform.register_lookup(KeyTransformLte)
+ KeyTransform.register_lookup(KeyTransformGt)
+ KeyTransform.register_lookup(KeyTransformGte)
++KeyTransform.register_lookup(KeyTransformIn)
+ 
+ 
+ class KeyTransformFactory:
+diff --git a/tests/settings_sqlite.py b/tests/settings_sqlite.py
+new file mode 100644
+index 0000000000..df14c44b85
+--- /dev/null
++++ b/tests/settings_sqlite.py
+@@ -0,0 +1,15 @@
++
++SECRET_KEY = 'test'
++DATABASES = {
++    'default': {
++        'ENGINE': 'django.db.backends.sqlite3',
++        'NAME': ':memory:',
++    }
++}
++INSTALLED_APPS = [
++    'django.contrib.contenttypes',
++    'django.contrib.auth',
++    'tests.model_fields',
++]
++DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
++USE_TZ = True

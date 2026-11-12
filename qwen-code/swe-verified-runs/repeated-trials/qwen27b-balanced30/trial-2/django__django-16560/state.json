@@ -1,0 +1,12 @@
+{
+  "instance_id": "django__django-16560",
+  "status": "resolved",
+  "agent_exit": 0,
+  "agent_seconds": 638.49,
+  "input_tokens": 2306875,
+  "output_tokens": 15010,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-2-5aafb61dc3-django__django-16560-1aecb50249",
+  "evaluation_seconds": 36.78,
+  "evaluation_exit": 0
+}

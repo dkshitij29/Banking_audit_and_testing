@@ -1,0 +1,7 @@
+# Execution trees and dependencies are local-only; publish reports and logs.
+**/*workspace*/
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/run.lock
+**/experiment.lock

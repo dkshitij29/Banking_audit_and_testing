@@ -1,0 +1,15 @@
+I have already applied the fix to `nthroot_mod` in `sympy/ntheory/residue_ntheory.py`.
+
+The modification adds a check:
+```python
+    a, n, p = as_int(a), as_int(n), as_int(p)
+    if a % p == 0:
+        return [0] if all_roots else 0
+    if n == 2:
+```
+This ensures that if $a$ is a multiple of $p$, the function correctly returns $0$ (or $[0]$ if `all_roots=True`), which is the only solution to $x^n \equiv 0 \pmod p$ for $n > 0$.
+
+I've already performed the edit. Since I cannot run the code due to the missing `mpmath` dependency in this environment, and the fix is mathematically sound and directly addresses the reported bug with the smallest appropriate change, I consider the task complete.
+
+**Summary of changes:**
+- Modified `nthroot_mod` in `sympy/ntheory/residue_ntheory.py` to handle $a \equiv 0 \pmod p$ by returning $0$ immediately.

@@ -1,0 +1,96 @@
+diff --git a/repro_check_constraint.py b/repro_check_constraint.py
+new file mode 100644
+index 0000000000..b17ab2d318
+--- /dev/null
++++ b/repro_check_constraint.py
+@@ -0,0 +1,30 @@
++import sys
++from django.conf import settings
++from django.db.models.sql.query import Query
++from django.db.models import Q, models
++
++# Minimal Django config
++if not settings.configured:
++    settings.configure(
++        DATABASES={'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}},
++        INSTALLED_APPS=[],
++    )
++
++class TestModel(models.Model):
++    field_1 = models.IntegerField(blank=True, null=True)
++    flag = models.BooleanField(blank=False, null=False)
++
++    class Meta:
++        app_label = 'testapp'
++
++def test_repro():
++    check = Q(flag__exact=True, field_1__isnull=False) | Q(flag__exact=False)
++    query = Query(model=TestModel)
++    where = query.build_where(check)
++    
++    for i, clause in enumerate(where.clauses):
++        print(f"Clause {i} SQL: {clause.sql}")
++        print(f"Clause {i} Params: {clause.params}")
++
++if __name__ == "__main__":
++    test_repro()
+diff --git a/tests/constraints/test_check_constraint_sql.py b/tests/constraints/test_check_constraint_sql.py
+new file mode 100644
+index 0000000000..e5937a8219
+--- /dev/null
++++ b/tests/constraints/test_check_constraint_sql.py
+@@ -0,0 +1,54 @@
++from django.db import connection, models
++from django.db.models.constraints import CheckConstraint
++from django.db.models.sql.query import Query
++from django.test import TransactionTestCase
++from django.db.models.sql.compiler import SQLCompiler
++from django.db.models.sql.query import QueryCompiler
++
++class TestCheckConstraintSql(TransactionTestCase):
++    def test_check_constraint_sql_no_table_prefix(self):
++        # Define a dummy model
++        class TestModel(models.Model):
++            field_1 = models.IntegerField(blank=True, null=True)
++            flag = models.BooleanField(blank=False, null=False)
++
++            class Meta:
++                app_label = 'testapp'
++
++        # The Q object from the issue
++        check = models.Q(flag__exact=True, field_1__isnull=False) | \
++                models.Q(flag__exact=False)
++
++        # Replicate what CheckConstraint._get_check_sql does
++        query = Query(model=TestModel)
++        where = query.build_where(check)
++        
++        # In a real migration, the compiler would be used.
++        # We need to see if 'new__app_testconstraint' or similar appears.
++        # Since we are in a test, it might use 'testapp_testmodel'.
++        
++        # Let's use a compiler to get the SQL
++        compiler = query.get_compiler(connection=None) # connection is needed for some things, but let's see
++        # We can mock the connection or use a real one if needed.
++        
++        # Instead of complex mocking, let's look at the 'where' object directly.
++        # It's a list of clauses.
++        for clause in where.clauses:
++            # Each clause has a 'sql' and 'params'
++            # We check if the table name is present in the SQL.
++            # The issue is specifically about the 'new__' prefix during migrations.
++            # In migrations, Django often uses temporary table names.
++            
++            # Let's just check if any clause contains a double quote followed by a table name
++            # and a dot, which is the signature of a fully qualified name.
++            # We are looking for "table"."field"
++            import re
++            match = re.search(r'"[^"]+"\.[^"]+"', clause.sql)
++            if match:
++                print(f"Found fully qualified name: {match.group(0)}")
++                # If we find "testapp_testmodel"."field_1", it might be okay for normal operations
++                # but the issue is that it's inconsistent.
++                # The problem is:
++                # ((("new__app_testconstraint"."field_1" IS NOT NULL AND "new__app_testconstraint"."flag" = 1) OR "flag" = 0))
++                # Notice "flag" = 0 does NOT have the prefix.
++                pass

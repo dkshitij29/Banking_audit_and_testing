@@ -1,0 +1,7 @@
+
+
+I've saved the following memory to the project memory directory:
+
+- **Project memory** (`feedback/sympy_latex_mul_symbol_fix.md`): Documents that `LatexPrinter.__init__` was modified to accept arbitrary strings for `mul_symbol`, not just the 4 hardcoded values. Updated the project `MEMORY.md` index with this entry.
+
+No action needed — this was just the memory catalog update notification.

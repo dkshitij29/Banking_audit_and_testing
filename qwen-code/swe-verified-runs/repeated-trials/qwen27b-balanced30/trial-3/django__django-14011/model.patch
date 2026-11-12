@@ -1,0 +1,46 @@
+diff --git a/django/core/servers/basehttp.py b/django/core/servers/basehttp.py
+index 14dab517c9..2a4b6b2fb2 100644
+--- a/django/core/servers/basehttp.py
++++ b/django/core/servers/basehttp.py
+@@ -11,6 +11,7 @@ import logging
+ import socket
+ import socketserver
+ import sys
++import threading
+ from wsgiref import simple_server
+ 
+ from django.core.exceptions import ImproperlyConfigured
+@@ -81,6 +82,33 @@ class ThreadedWSGIServer(socketserver.ThreadingMixIn, WSGIServer):
+     """A threaded version of the WSGIServer"""
+     daemon_threads = True
+ 
++    def server_close(self):
++        try:
++            super().server_close()
++        finally:
++            # Ensure all threads are joined before the server is fully closed.
++            # ThreadingMixIn only joins non-daemon threads by default, which can
++            # lead to a race condition where database connections are still open
++            # when the test suite attempts to destroy the test database.
++            threads = getattr(self, '_django_threads', [])
++            for t in threads:
++                t.join()
++
++    def process_request(self, request, client_address):
++        """Start a new thread to process the request."""
++        if self.block_on_close:
++            vars(self).setdefault('_threads', socketserver._Threads())
++        t = threading.Thread(
++            target=self.process_request_thread,
++            args=(request, client_address),
++        )
++        t.daemon = self.daemon_threads
++        self._threads.append(t)
++        if not hasattr(self, '_django_threads'):
++            self._django_threads = []
++        self._django_threads.append(t)
++        t.start()
++
+ 
+ class ServerHandler(simple_server.ServerHandler):
+     http_version = '1.1'

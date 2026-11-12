@@ -1,0 +1,13 @@
+{
+  "instance_id": "psf__requests-5414",
+  "status": "ambiguous_failure",
+  "agent_exit": 1,
+  "agent_seconds": 218.38,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 1350564,
+  "output_tokens": 7678,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-2-7581567fed-psf__requests-5414-0234149acd",
+  "evaluation_seconds": 30.67,
+  "evaluation_exit": 0
+}

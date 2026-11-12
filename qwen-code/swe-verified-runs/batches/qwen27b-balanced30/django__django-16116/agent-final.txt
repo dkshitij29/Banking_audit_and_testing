@@ -1,0 +1,9 @@
+
+
+All 140 migration command tests pass. Here's a concise summary:
+
+**Problem:** `makemigrations --check` was inconsistent with `migrate --check` and `optimizemigration --check`. While the latter two detect an issue and exit without making changes, `makemigrations --check` was writing migration files to disk and *then* exiting with status 1.
+
+**Fix:** In `django/core/management/commands/makemigrations.py`, moved the `check_changes` check **before** the `write_migration_files()`/`write_to_last_migration_files()` calls. Now when `--check` is used, the command detects changes and exits with status 1 without writing any files — matching the behavior of `migrate --check` and `optimizemigration --check`.
+
+**Test results:** All 140 migration command tests pass (including the existing `test_makemigrations_check`).

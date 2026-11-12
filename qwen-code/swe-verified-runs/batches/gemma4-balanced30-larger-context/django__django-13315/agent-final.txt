@@ -1,0 +1,18 @@
+I've analyzed the issue and the relevant code. The problem occurs in `django/db/models/fields/__init__.py` within the `get_choices` method of the `Field` class. When `limit_choices_to` is provided (especially as a `Q` object) and the underlying model's default manager's `complex_filter` involves a join, the resulting queryset can contain duplicate records. This leads to duplicate options in the form field.
+
+To fix this, I will add a `.distinct()` call to the queryset `qs` in `get_choices` to ensure that each choice is unique.
+
+I have already applied this fix. Since I cannot run the full test suite due to environment limitations, I have verified the change against the logic described in the issue.
+
+### Changes Made:
+Modified `django/db/models/fields/__init__.py` to add `.distinct()` to the queryset in `get_choices`:
+
+```python
+# Before:
+qs = rel_model._default_manager.complex_filter(limit_choices_to)
+
+# After:
+qs = rel_model._default_manager.complex_filter(limit_choices_to).distinct()
+```
+
+This ensures that even if `complex_filter` produces duplicates due to joins, the list of choices returned to the form will only contain unique items.

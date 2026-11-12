@@ -1,0 +1,64 @@
+diff --git a/sklearn/model_selection/_search.py b/sklearn/model_selection/_search.py
+index 99d6096af7..f55f1c75b6 100644
+--- a/sklearn/model_selection/_search.py
++++ b/sklearn/model_selection/_search.py
+@@ -18,6 +18,7 @@ from functools import partial, reduce
+ from itertools import product
+ import operator
+ import warnings
++import time
+ 
+ import numpy as np
+ from scipy.stats import rankdata
+@@ -764,12 +765,16 @@ class BaseSearchCV(six.with_metaclass(ABCMeta, BaseEstimator,
+                 self.best_index_]
+ 
+         if self.refit:
++            start_time = time.perf_counter()
+             self.best_estimator_ = clone(base_estimator).set_params(
+                 **self.best_params_)
+             if y is not None:
+                 self.best_estimator_.fit(X, y, **fit_params)
+             else:
+                 self.best_estimator_.fit(X, **fit_params)
++            self.refit_time_ = time.perf_counter() - start_time
++        else:
++            self.refit_time_ = None
+ 
+         # Store the only scorer not as a dict for single metric evaluation
+         self.scorer_ = scorers if self.multimetric_ else scorers['score']
+diff --git a/test_refit_time.py b/test_refit_time.py
+new file mode 100644
+index 0000000000..7f3f1448fd
+--- /dev/null
++++ b/test_refit_time.py
+@@ -0,0 +1,29 @@
++import sklearn.datasets
++import sklearn.model_selection
++import sklearn.ensemble
++import time
++
++X, y = sklearn.datasets.load_iris(return_X_y=True)
++
++rs = sklearn.model_selection.GridSearchCV(
++    estimator=sklearn.ensemble.RandomForestClassifier(),
++    param_grid={'n_estimators': [2, 3, 4, 5]}
++)
++rs.fit(X, y)
++
++print(f"mean_fit_time: {rs.cv_results_['mean_fit_time']}")
++print(f"refit_time_: {rs.refit_time_}")
++
++# Verify it is not None when refit=True
++assert rs.refit_time_ is not None
++assert isinstance(rs.refit_time_, float)
++
++# Verify it is None when refit=False
++rs_no_refit = sklearn.model_selection.GridSearchCV(
++    estimator=sklearn.ensemble.RandomForestClassifier(),
++    param_grid={'n_estimators': [2, 3, 4, 5]},
++    refit=False
++)
++rs_no_refit.fit(X, y)
++print(f"refit_time_ (refit=False): {rs_no_refit.refit_time_}")
++assert rs_no_refit.refit_time_ is None

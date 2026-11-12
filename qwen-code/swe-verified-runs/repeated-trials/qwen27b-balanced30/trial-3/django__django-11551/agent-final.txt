@@ -1,0 +1,9 @@
+
+
+**Fix applied and all tests pass.**
+
+**Problem:** `_check_list_display_item` in `django/contrib/admin/checks.py` used `hasattr(obj.model, item)` as a gate before trying `model._meta.get_field(item)`. For descriptor fields (like `PositionField`) whose `__get__` raises `AttributeError` when called on the class (not an instance), `hasattr` returns `False`, causing the function to skip `get_field()` entirely and incorrectly emit error `admin.E108`.
+
+**Fix:** Removed the `hasattr(obj.model, item)` gate. Instead, the function now always tries `model._meta.get_field(item)` first. If that raises `FieldDoesNotExist`, it falls back to `getattr(obj.model, item)`. Only if **both** fail does it emit `admin.E108`. If either succeeds, it checks for `ManyToManyField` (E109) and returns no errors otherwise.
+
+**Test results:** All 119 tests in `modeladmin.test_checks` pass, including all 4 `ListDisplayTests` (missing field, invalid field type, not iterable, valid case).

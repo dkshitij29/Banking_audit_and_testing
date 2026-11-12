@@ -1,0 +1,13 @@
+I have successfully applied the fix for the `catch_all_view()` method in `django/contrib/admin/sites.py`.
+
+### Investigation and Fix
+The issue was that `catch_all_view` was using `request.path_info` to construct the redirect URL. In Django, `path_info` excludes the script name, which causes the redirect to fail when `FORCE_SCRIPT_NAME` is enabled. By changing this to `request.path`, the script name is correctly preserved in the redirect path.
+
+**Changes:**
+- Modified `django/contrib/admin/sites.py`:
+  - Replaced `path = '%s/' % request.path_info` with `path = '%s/' % request.path` inside the `catch_all_view` method.
+
+### Verification
+I attempted to run the project's test runner, but it failed due to a missing dependency (`asgiref`). Since I am instructed not to spend time rebuilding the whole project or installing into global environments if dependencies are missing, I have completed the fix based on the provided patch description and source code analysis.
+
+The fix is minimal and aligns perfectly with the provided patch from the Django repository.

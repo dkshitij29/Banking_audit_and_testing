@@ -1,0 +1,25 @@
+The issue reported is that the Django MySQL backend uses the deprecated `db` and `passwd` keywords when passing connection parameters to `mysqlclient`. These should be replaced with `database` and `password` respectively.
+
+I have updated `django/db/backends/mysql/base.py` to use the new keywords.
+
+### Changes:
+In `django/db/backends/mysql/base.py`, within the `get_connection_params` method:
+- Replaced `kwargs['db']` with `kwargs['database']`
+- Replaced `kwargs['passwd']` with `kwargs['password']`
+
+### Verification:
+Since I am in a host checkout environment without a full database setup (and missing some dependencies like `asgiref`), I couldn't run the full Django test suite. However, the code change directly addresses the deprecation warning by using the correct keys for the `mysqlclient` driver as requested.
+
+```python
+# Before
+        if settings_dict['NAME']:
+            kwargs['db'] = settings_dict['NAME']
+        if settings_dict['PASSWORD']:
+            kwargs['passwd'] = settings_dict['PASSWORD']
+
+# After
+        if settings_dict['NAME']:
+            kwargs['database'] = settings_dict['NAME']
+        if settings_dict['PASSWORD']:
+            kwargs['password'] = settings_dict['PASSWORD']
+```

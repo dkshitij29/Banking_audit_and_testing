@@ -1,0 +1,237 @@
+diff --git a/django/db/models/sql/datastructures.py b/django/db/models/sql/datastructures.py
+index 1edf040e82..0949a67acf 100644
+--- a/django/db/models/sql/datastructures.py
++++ b/django/db/models/sql/datastructures.py
+@@ -162,8 +162,7 @@ class Join:
+         return hash(self.identity)
+ 
+     def equals(self, other):
+-        # Ignore filtered_relation in equality check.
+-        return self.identity[:-1] == other.identity[:-1]
++        return self.identity == other.identity
+ 
+     def demote(self):
+         new = self.relabeled_clone({})
+diff --git a/django/db/models/sql/query.py b/django/db/models/sql/query.py
+index 54f3258eac..e25041cef5 100644
+--- a/django/db/models/sql/query.py
++++ b/django/db/models/sql/query.py
+@@ -805,7 +805,11 @@ class Query(BaseExpression):
+ 
+         # Create a new alias for this table.
+         if alias_list:
+-            alias = "%s%d" % (self.alias_prefix, len(self.alias_map) + 1)
++            alias = (
++                filtered_relation.alias
++                if filtered_relation is not None
++                else "%s%d" % (self.alias_prefix, len(self.alias_map) + 1)
++            )
+             alias_list.append(alias)
+         else:
+             # The first occurrence of a table uses the table name directly.
+diff --git a/test_fix.py b/test_fix.py
+new file mode 100644
+index 0000000000..515c8e7320
+--- /dev/null
++++ b/test_fix.py
+@@ -0,0 +1,164 @@
++"""Standalone test for the FilteredRelation bug fix (ticket #15554)."""
++import os
++import sys
++
++workspace = "/home/mahesh/DAT/swe-verified-runs/repeated-trials/qwen27b-balanced30/trial-3/django__django-15554/workspace"
++sys.path.insert(0, workspace)
++
++for mod in list(sys.modules):
++    if mod.startswith("django"):
++        del sys.modules[mod]
++
++import django
++from django.conf import settings
++
++if not settings.configured:
++    settings.configure(
++        DEBUG=True,
++        DATABASES={
++            "default": {
++                "ENGINE": "django.db.backends.sqlite3",
++                "NAME": ":memory:",
++            }
++        },
++        INSTALLED_APPS=[
++            "django.contrib.contenttypes",
++            "django.contrib.auth",
++        ],
++        USE_TZ=True,
++    )
++
++django.setup()
++
++from django.db import models, connection
++from django.apps import apps
++
++class Author(models.Model):
++    name = models.CharField(max_length=50)
++    class Meta:
++        app_label = "contenttypes"
++
++class Book(models.Model):
++    title = models.CharField(max_length=255)
++    author = models.ForeignKey(Author, models.CASCADE, related_name="book")
++    state = models.CharField(max_length=10, default="available")
++    class Meta:
++        app_label = "contenttypes"
++
++apps.app_configs["contenttypes"].models["author"] = Author
++apps.app_configs["contenttypes"].models["book"] = Book
++
++with connection.schema_editor() as schema_editor:
++    schema_editor.create_model(Author)
++    schema_editor.create_model(Book)
++
++from django.db.models import Case, F, FilteredRelation, Q, When
++
++author1 = Author.objects.create(name="Alice")
++author2 = Author.objects.create(name="Jane")
++
++Book.objects.create(title="Poem by Alice", author=author1, state="published")
++Book.objects.create(title="The book by Jane A", author=author2, state="published")
++Book.objects.create(title="The book by Jane B", author=author2, state="draft")
++Book.objects.create(title="The book by Alice", author=author1, state="published")
++
++# --- Test 1: Multiple FilteredRelation on same relation ---
++print("=" * 70)
++print("Test 1: Multiple FilteredRelation on same relation path")
++print("=" * 70)
++
++qs = Author.objects.annotate(
++    book_published=FilteredRelation(
++        "book", condition=Q(book__state="published")
++    ),
++    book_draft=FilteredRelation(
++        "book", condition=Q(book__state="draft")
++    ),
++)
++
++query_str = str(qs.filter(book_published__isnull=False).query)
++print(f"With book_published filter:\n{query_str}\n")
++
++has_published = "book_published" in query_str
++print(f"  book_published in SQL: {has_published}")
++
++query_str2 = str(qs.filter(book_draft__isnull=False).query)
++print(f"With book_draft filter:\n{query_str2}\n")
++
++has_draft = "book_draft" in query_str2
++print(f"  book_draft in SQL: {has_draft}")
++
++# Both must generate correct results
++published_authors = list(qs.filter(book_published__isnull=False).distinct().values_list("name", flat=True).order_by("name"))
++draft_authors = list(qs.filter(book_draft__isnull=False).distinct().values_list("name", flat=True).order_by("name"))
++
++print(f"  Authors with published books: {published_authors}")
++print(f"  Authors with draft books:    {draft_authors}")
++
++assert "Alice" in published_authors, f"Expected Alice in published, got {published_authors}"
++assert "Jane" in published_authors, f"Expected Jane in published, got {published_authors}"
++assert "Jane" in draft_authors, f"Expected Jane in draft, got {draft_authors}"
++assert "Alice" not in draft_authors, f"Did not expect Alice in draft, got {draft_authors}"
++
++print("  PASS\n")
++
++# --- Test 2: Both conditions in same query ---
++print("=" * 70)
++print("Test 2: Both filtered relations used simultaneously")
++print("=" * 70)
++
++qs2 = Author.objects.annotate(
++    book_published=FilteredRelation(
++        "book", condition=Q(book__state="published")
++    ),
++    book_draft=FilteredRelation(
++        "book", condition=Q(book__state="draft")
++    ),
++).filter(
++    book_published__isnull=False,
++    book_draft__isnull=False,
++)
++
++query_str3 = str(qs2.query)
++print(f"SQL:\n{query_str3}\n")
++
++has_both = "book_published" in query_str3 and "book_draft" in query_str3
++print(f"  Both aliases in SQL: {has_both}")
++
++assert has_both, "Both JOIN aliases must appear"
++join_count = query_str3.count("JOIN")
++print(f"  Total JOINs: {join_count}")
++assert join_count >= 2, f"Expected at least 2 JOINs, got {join_count}"
++
++results = list(qs2.values_list("name", flat=True))
++print(f"  Authors with both published AND draft books: {results}")
++assert results == ["Jane"], f"Expected ['Jane'], got {results}"
++
++print("  PASS\n")
++
++# --- Test 3: SQL alias verification ---
++print("=" * 70)
++print("Test 3: Verify correct aliases in generated SQL")
++print("=" * 70)
++
++sql = str(Author.objects.annotate(
++    book_published=FilteredRelation("book", condition=Q(book__state="published")),
++    book_draft=FilteredRelation("book", condition=Q(book__state="draft")),
++).filter(book_published__isnull=False, book_draft__isnull=False).query)
++
++# Both filtered relation aliases should appear as JOIN aliases
++assert "book_published" in sql
++assert "book_draft" in sql
++
++# Verify the JOIN clause contains the correct aliases
++import re
++joins = re.findall(r'JOIN\s+"[^"]+"\s+(\w+)\s+ON', sql)
++print(f"  JOIN aliases found: {joins}")
++assert "book_published" in joins, f"Expected book_published in joins, got {joins}"
++assert "book_draft" in joins, f"Expected book_draft in joins, got {joins}"
++
++print("  PASS\n")
++
++print("=" * 70)
++print("ALL TESTS PASSED")
++print("=" * 70)
+diff --git a/tests/filtered_relation/tests.py b/tests/filtered_relation/tests.py
+index 790a90d9e2..3510bd3a65 100644
+--- a/tests/filtered_relation/tests.py
++++ b/tests/filtered_relation/tests.py
+@@ -657,6 +657,31 @@ class FilteredRelationTests(TestCase):
+             FilteredRelation("book", condition=Q(book__title="b")), mock.ANY
+         )
+ 
++    def test_multiple_filtered_relations_on_same_relation(self):
++        # Regression test: Multiple FilteredRelation on the same relation
++        # path with different conditions must generate separate SQL JOINs.
++        qs = Author.objects.annotate(
++            book_alice=FilteredRelation(
++                "book", condition=Q(book__title__iexact="poem by alice")
++            ),
++            book_jane=FilteredRelation(
++                "book", condition=Q(book__title__iexact="the book by jane a")
++            ),
++        )
++        # Both aliases must appear in the generated SQL as separate JOINs.
++        query = str(qs.query)
++        self.assertIn("book_alice", query)
++        self.assertIn("book_jane", query)
++        # Verify correctness: Alice has "poem by alice", Jane doesn't.
++        self.assertSequenceEqual(
++            qs.filter(book_alice__isnull=False),
++            [self.author1],
++        )
++        self.assertSequenceEqual(
++            qs.filter(book_jane__isnull=False),
++            [self.author2],
++        )
++
+ 
+ class FilteredRelationAggregationTests(TestCase):
+     @classmethod

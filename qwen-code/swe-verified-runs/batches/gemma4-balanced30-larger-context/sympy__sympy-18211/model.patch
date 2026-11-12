@@ -1,0 +1,16 @@
+diff --git a/sympy/solvers/solveset.py b/sympy/solvers/solveset.py
+index 445be3e0e8..70017fa0ca 100644
+--- a/sympy/solvers/solveset.py
++++ b/sympy/solvers/solveset.py
+@@ -2023,7 +2023,10 @@ def solveset(f, symbol=None, domain=S.Complexes):
+         f = f.xreplace({d: e})
+     f = piecewise_fold(f)
+ 
+-    return _solveset(f, symbol, domain, _check=True)
++    try:
++        return _solveset(f, symbol, domain, _check=True)
++    except NotImplementedError:
++        return ConditionSet(symbol, Eq(f, 0), domain)
+ 
+ 
+ def solveset_real(f, symbol):

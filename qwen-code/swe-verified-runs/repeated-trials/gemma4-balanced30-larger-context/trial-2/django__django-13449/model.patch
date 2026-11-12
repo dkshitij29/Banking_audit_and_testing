@@ -1,0 +1,13 @@
+diff --git a/django/db/models/expressions.py b/django/db/models/expressions.py
+index 90d90119d0..9d6f995542 100644
+--- a/django/db/models/expressions.py
++++ b/django/db/models/expressions.py
+@@ -24,6 +24,8 @@ class SQLiteNumericMixin:
+         sql, params = self.as_sql(compiler, connection, **extra_context)
+         try:
+             if self.output_field.get_internal_type() == 'DecimalField':
++                if hasattr(self, 'window') and self.window is not None:
++                    return sql, params
+                 sql = 'CAST(%s AS NUMERIC)' % sql
+         except FieldError:
+             pass

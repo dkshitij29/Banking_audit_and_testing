@@ -1,0 +1,26 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..c6af5f38
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,5 @@
++import requests
++try:
++    requests.get("http://.example.com")
++except Exception as e:
++    print(f"Caught expected error: {type(e).__name__}: {e}")
+diff --git a/requests/models.py b/requests/models.py
+index e7d292d5..be9411c4 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -384,6 +384,10 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
+             scheme, auth, host, port, path, query, fragment = parse_url(url)
+         except LocationParseError as e:
+             raise InvalidURL(*e.args)
++        except UnicodeError:
++            raise InvalidURL('URL has an invalid label.')
++        except UnicodeError:
++            raise InvalidURL('URL has an invalid label.')
+ 
+         if not scheme:
+             error = ("Invalid URL {0!r}: No schema supplied. Perhaps you meant http://{0}?")

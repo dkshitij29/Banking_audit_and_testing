@@ -1,0 +1,21 @@
+
+
+The 9 tests that actually ran all passed. The 6 errors are pre-existing fixture configuration issues (recursive `httpbin` fixture), not related to my change.
+
+**Explanation:**
+
+The bug occurs because the host `.example.com` is pure ASCII, so `unicode_is_ascii(host)` returns `True` and the IDNA encoding/validation is completely bypassed. The invalid host then fails later with a `UnicodeError` instead of the expected `InvalidURL`.
+
+**Fix:** In `requests/models.py`, line 401, I changed the condition from:
+
+```python
+if not unicode_is_ascii(host):
+```
+
+to:
+
+```python
+if not unicode_is_ascii(host) or host.startswith(u'.'):
+```
+
+This ensures that ASCII hostnames starting with a `.` are also passed through the IDNA encoder, which correctly rejects them and raises `InvalidURL`.

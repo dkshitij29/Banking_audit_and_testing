@@ -1,0 +1,12 @@
+{
+  "instance_id": "pydata__xarray-6992",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 225.71,
+  "input_tokens": 464852,
+  "output_tokens": 6493,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-11a4c85349-pydata__xarray-6992-3ceb8eaca7",
+  "evaluation_seconds": 76.5,
+  "evaluation_exit": 0
+}

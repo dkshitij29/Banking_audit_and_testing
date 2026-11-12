@@ -1,0 +1,18 @@
+
+
+## Summary
+
+**Problem:** The `latex()` function's `mul_symbol` parameter only accepted 4 hardcoded values (`None`, `"ldot"`, `"dot"`, `"times"`). Users could not supply custom multiplication separators like `\,` (thin space).
+
+**Fix:** Modified `LatexPrinter.__init__` in `sympy/printing/latex.py` to check if `mul_symbol` is in the predefined table. If it is, use the mapped LaTeX value (backward compatible). If not, use the string directly as the custom separator.
+
+**Changes made to `sympy/printing/latex.py`:**
+1. Lines 159–169: Replaced direct dictionary lookup with a conditional that falls through to using the raw string for custom values
+2. Line 2165: Updated docstring to document that custom strings are accepted
+
+**Test results:** All tests pass:
+- All 4 existing named options (`None`, `"dot"`, `"times"`, `"ldot"`) produce identical output as before
+- Custom strings like `r' \,'` are used verbatim: `latex(3*x**2*y, mul_symbol=r' \,')` → `'3 \,x^{2} \,y'`
+- Custom separators also apply to number formatting (scientific notation)
+
+**Note:** Could not run `pytest` directly because this old SymPy version (pre-Python 3.10 compatibility) has `from collections import Mapping` which was removed in Python 3.10+. Tests were run with a collections patch applied.

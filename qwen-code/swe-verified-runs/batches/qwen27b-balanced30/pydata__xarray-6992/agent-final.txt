@@ -1,0 +1,24 @@
+
+
+## Summary
+
+**Problem:** `DataVariables.__len__()` computed `len(_variables) - len(_coord_names)`, which returns a negative value when more coordinates are registered in `_coord_names` than exist as entries in `_variables`. This happens after `reset_index("z", drop=True)` which drops the underlying variable entries but retains entries in `_coord_names`. Python's `__len__` requires `>= 0`, raising `ValueError: __len__() should return >= 0`.
+
+**Fix:** Changed `DataVariables.__len__()` in `xarray/core/dataset.py` (line 368) from:
+
+```python
+return len(self._dataset._variables) - len(self._dataset._coord_names)
+```
+
+to:
+
+```python
+return sum(1 for _ in self)
+```
+
+This delegates to `__iter__`, which already correctly filters to keys in `_variables` but not in `_coord_names`, ensuring `__len__` is always consistent with `__iter__` and never negative.
+
+**Test results:**
+- MVCE from the issue now works without error
+- `test_data_vars_properties` — PASSED
+- `test_reset_index` — PASSED

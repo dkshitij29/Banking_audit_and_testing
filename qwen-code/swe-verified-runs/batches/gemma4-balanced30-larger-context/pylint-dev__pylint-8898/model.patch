@@ -1,0 +1,27 @@
+diff --git a/pylint/config/argument.py b/pylint/config/argument.py
+index 30a5fd175..53432232a 100644
+--- a/pylint/config/argument.py
++++ b/pylint/config/argument.py
+@@ -10,6 +10,8 @@ An Argument instance represents a pylint option to be handled by an argparse.Arg
+ from __future__ import annotations
+ 
+ import argparse
++import csv
++import io
+ import os
+ import pathlib
+ import re
+@@ -114,8 +116,11 @@ def _regex_transformer(value: str) -> Pattern[str]:
+ def _regexp_csv_transfomer(value: str) -> Sequence[Pattern[str]]:
+     """Transforms a comma separated list of regular expressions."""
+     patterns: list[Pattern[str]] = []
+-    for pattern in _csv_transformer(value):
+-        patterns.append(_regex_transformer(pattern))
++    # Use csv module to correctly handle quoted strings containing commas
++    reader = csv.reader(io.StringIO(value), skipinitialspace=True)
++    for row in reader:
++        if row:
++            patterns.append(_regex_transformer(row[0]))
+     return patterns
+ 
+ 

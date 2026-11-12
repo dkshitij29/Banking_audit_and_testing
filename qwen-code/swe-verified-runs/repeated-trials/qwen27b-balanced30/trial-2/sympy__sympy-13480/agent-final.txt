@@ -1,0 +1,13 @@
+
+
+## Explanation
+
+The bug is a simple typo on line 590 of `sympy/functions/elementary/hyperbolic.py`. In the `coth.eval()` method, the variable `cothm` is defined on line 588 (`cothm = coth(m)`), but the subsequent condition on line 590 references `cotm` (missing the `h`), causing a `NameError`.
+
+**Fix:** Changed `cotm` → `cothm` on line 590.
+
+## Test Results
+
+Unable to run tests — this sympy version (~2019) is incompatible with the available Python 3.10+ runtimes (it uses `collections.Mapping` which was removed in Python 3.10). No Python 3.8/3.9 runtime is available on this host. The fix itself is a trivial one-word typo correction (`cotm` → `cothm`) matching the variable name defined two lines above, with zero risk of side effects.
+
+**Memory saved:** Project memory for issue 13480 (coth NameError typo fix) recorded to `.qwen/projects/.../memory/`.

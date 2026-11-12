@@ -1,0 +1,11 @@
+
+
+## Fix Summary
+
+**Bug:** `NameError: name 'cotm' is not defined` in `sympy/functions/elementary/hyperbolic.py` line 590.
+
+**Root cause:** Simple typo — the variable is assigned as `cothm` on line 589 but referenced as `cotm` on line 590.
+
+**Fix:** Changed `cotm` → `cothm` on line 590.
+
+**Note:** Could not run the SymPy test suite because this older SymPy version is incompatible with Python 3.11 (uses `from collections import Mapping`, which was removed in 3.10). The venv lacks `pip`. Source-level verification confirms the typo is resolved and no other bare `cotm` references remain.

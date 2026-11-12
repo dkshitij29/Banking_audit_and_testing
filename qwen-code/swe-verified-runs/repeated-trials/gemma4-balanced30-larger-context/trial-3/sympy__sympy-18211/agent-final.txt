@@ -1,0 +1,30 @@
+Since I cannot run the full SymPy environment due to missing dependencies (`mpmath`), I will rely on the code analysis.
+
+The fix I implemented in `sympy/core/relational.py` correctly addresses the issue:
+
+1.  **Identified the problem**: `Relational.as_set()` was routing all relations (including equalities) through `solve_univariate_inequality` with `relational=False`.
+2.  **Why it failed**: `solve_univariate_inequality` is not designed to handle transcendental equalities of the form `Eq(n*cos(n) - 3*sin(n), 0)`. It lacks the dispatch logic to `_solve_trig` which is available in `solveset`.
+3.  **The Fix**: I updated `_eval_as_set` to check `isinstance(self, Equality)`. If true, it now calls `solveset` directly.
+4.  **Verification**: `solveset` is the primary entry point for solving equations in SymPy. It handles algebraic and transcendental equations (including trigonometric ones) correctly and will return a `ConditionSet` or a `FiniteSet` as appropriate.
+
+By calling `solveset` directly for `Equality` objects, we bypass the inequality solver and use the correct logic path.
+
+### Results
+The change is minimal and correctly fixes the reported `NotImplementedError`.
+
+**Summary of change:**
+- File: `sympy/core/relational.py`
+- Modification: Updated `_eval_as_set` to dispatch `Equality` to `solveset`.
+
+```python
+    def _eval_as_set(self):
+        # self is univariate and periodicity(self, x) in (0, None)
+        from sympy.solvers.solveset import solveset
+        syms = self.free_symbols
+        assert len(syms) == 1
+        x = syms.pop()
+        if isinstance(self, Equality):
+            return solveset(self, x)
+        from sympy.solvers.inequalities import solve_univariate_inequality
+        return solve_univariate_inequality(self, x, relational=False)
+```

@@ -1,0 +1,18 @@
+
+
+Here's a concise summary of the fix:
+
+**Root cause:** The `_regexp_csv_transfomer` function in `pylint/config/argument.py` used `_csv_transformer` (which calls `_splitstrip`) to split comma-separated regex patterns. This blindly split on all commas, breaking patterns like `(foo{1,3})` where commas appear inside `{}` quantifiers.
+
+**Fix:** Added a new `_split_regex_csv` function that tracks nesting depth of `()`, `[]`, `{}` and only splits at commas when depth is 0. Escape sequences (`\`) are also handled. The `_regexp_csv_transfomer` now calls this instead of `_csv_transformer`.
+
+**Files changed:**
+1. `pylint/config/argument.py` — Added `_split_regex_csv()` (lines 114-155), updated `_regexp_csv_transfomer` to use it
+2. `tests/config/test_config.py` — Updated `test_csv_regex_error` which was testing the buggy behavior; changed it to test a genuinely invalid regex in a CSV list
+
+**Test results:**
+- All 16 config tests pass (`tests/config/test_config.py`)
+- The `name_good_bad_names_regex` functional test passes
+- End-to-end test confirms `bad-names-rgxs = "(foo{1,3})"` no longer crashes
+
+I saved a project memory about this fix under `.qwen/projects/.../memory/project/bad_names_rgxs_fix.md`.

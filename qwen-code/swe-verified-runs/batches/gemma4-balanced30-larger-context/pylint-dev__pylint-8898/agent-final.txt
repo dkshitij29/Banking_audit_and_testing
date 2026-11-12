@@ -1,0 +1,15 @@
+I have fixed the issue where regular expressions containing commas were mangled by the CSV-style splitting logic in `pylint/config/argument.py`.
+
+I replaced the standard `_csv_transformer` call within `_regexp_csv_transfomer` with a `csv.reader` based approach. This correctly handles quoted strings (e.g., `"(foo{1,3})"`), ensuring that commas inside those quotes are preserved as part of the single regular expression instead of acting as delimiters.
+
+### Changes made:
+- Modified `pylint/config/argument.py`:
+    - Added `import csv` and `import io`.
+    - Updated `_regexp_csv_transfomer` to use `csv.reader` with `skipinitialspace=True` to correctly parse lists of regular expressions that may contain quoted elements.
+
+### Verification:
+- The `csv.reader` correctly parses `"(foo{1,3})"` as a single item.
+- The `csv.reader` also correctly parses standard comma-separated lists like `regex1, regex2`.
+- The fix is targeted specifically to the `regexp_csv` argument type, avoiding side effects on other CSV-parsed options.
+
+No tests were run as the environment does not have `pylint` installed, but the logic change directly addresses the root cause described in the bug report.

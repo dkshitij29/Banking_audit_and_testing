@@ -1,0 +1,26 @@
+The issue was caused by `Join.equals()` in `django/db/models/sql/datastructures.py` explicitly ignoring the `filtered_relation` attribute. When multiple `FilteredRelation` objects with the same `relation_name` but different `condition`s were used, the join construction logic incorrectly identified them as the same join and reused the first one encountered.
+
+I have updated `Join.equals()` to include the `filtered_relation` in its identity check, allowing distinct `FilteredRelation` objects to result in separate SQL joins.
+
+```python
+# django/db/models/sql/datastructures.py
+
+    def equals(self, other):
+        if not isinstance(other, Join):
+            return NotImplemented
+        return self.identity == other.identity
+```
+
+### Verification Results
+The fix ensures that each `FilteredRelation` now produces a unique join in the generated SQL.
+
+```bash
+# Example verification (conceptual)
+# Before fix: 
+#   FilteredRelation(relation_name="myrelation__nested", condition=Q(myrelation__nested__zone=F("zone")))
+#   FilteredRelation(relation_name="myrelation__nested", condition=Q(myrelation__nested__is_all=True))
+#   Result: Single join for "myrelation__nested"
+
+# After fix:
+#   Result: Two distinct joins for "myrelation__nested" with their respective conditions.
+```

@@ -1,0 +1,10 @@
+{
+  "instance_id": "pylint-dev__pylint-8898",
+  "status": "empty_patch",
+  "agent_exit": 1,
+  "agent_seconds": 23.84,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 398623,
+  "output_tokens": 432,
+  "changed_tests": false
+}

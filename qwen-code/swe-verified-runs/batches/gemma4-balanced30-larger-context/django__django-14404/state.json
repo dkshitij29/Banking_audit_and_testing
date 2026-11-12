@@ -1,0 +1,12 @@
+{
+  "instance_id": "django__django-14404",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 27.71,
+  "input_tokens": 93921,
+  "output_tokens": 955,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-django__django-14404-4c1da8360f",
+  "evaluation_seconds": 70.84,
+  "evaluation_exit": 0
+}

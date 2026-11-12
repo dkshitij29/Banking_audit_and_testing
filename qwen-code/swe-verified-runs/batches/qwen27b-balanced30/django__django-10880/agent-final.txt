@@ -1,0 +1,17 @@
+
+
+**Fix applied.** The issue was in `django/db/models/aggregates.py` line 71.
+
+**Root cause:** The `Aggregate.as_sql()` method sets `extra_context['distinct'] = 'DISTINCT'` (no trailing space), and the template `'%(function)s(%(distinct)s%(expressions)s)'` concatenates without any separator. This produces invalid SQL like `COUNT(DISTINCTCASE WHEN ...)` — missing a space between `DISTINCT` and `CASE`.
+
+**Fix:** Changed `'DISTINCT'` to `'DISTINCT '` (added trailing space):
+```python
+extra_context['distinct'] = 'DISTINCT ' if self.distinct else ''
+```
+
+**Result:** 
+- `Count(Case(...), distinct=True)` → `COUNT(DISTINCT CASE WHEN ...)` ✓
+- `Count(F('id'), distinct=True)` → `COUNT(DISTINCT id)` ✓
+- `Count(F('id'))` → `COUNT(id)` ✓ (no regression; empty string when `distinct=False`)
+
+**Limitation:** Could not run the project's test suite due to missing `pytz` dependency (`ModuleNotFoundError: No module named 'pytz'`). The fix was verified through pure-Python template rendering tests confirming correct SQL output in all three scenarios above.

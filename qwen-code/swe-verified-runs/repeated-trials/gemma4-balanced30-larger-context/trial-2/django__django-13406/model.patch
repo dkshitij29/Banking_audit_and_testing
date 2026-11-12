@@ -1,0 +1,74 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..fc25064d82
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,68 @@
++import pickle
++from django.db import models
++from django.db import connections
++from django.db.models import Sum
++from django.test import transaction
++from django.test import TestCase
++from django.db import connections
++import os
++import django
++import sys
++
++# Setup Django for the test script
++os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_project.settings')
++# We need to mock a settings file since we are in a standalone workspace
++if not os.path.exists('my_project'):
++    os.makedirs('my_project')
++with open('my_project/settings.py', 'w') as f:
++    f.write("DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}}")
++    f.write("INSTALLED_APPS = ['django.contrib.contenttypes', 'django.contrib.auth', 'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.admin', 'django.contrib.postgres']")
++    f.write("MIDDLEWARE = []")
++    f.write("ROOT_URLCONF = 'my_project.urls'")
++    f.write("SECRET_KEY = 'secret'")
++    f.write("DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'")
++
++# Mock urls.py
++os.makedirs('my_project', exist_ok=True)
++with open('my_project/urls.py', 'w') as f:
++    f.write("from django.urls import path")
++    f.write("urlpatterns = []")
++
++# The model
++class Toy(models.Model):
++    name = models.CharField(max_length=16)
++    material = models.CharField(max_length=16)
++    price = models.PositiveIntegerField()
++
++    class Meta:
++        app_label = 'toy_app'
++
++# Initialize Django
++django.setup()
++
++# Reproduction script
++with transaction.atomic():
++    Toy.objects.create(name='foo', price=10, material='wood')
++    Toy.objects.create(name='bar', price=20, material='plastic')
++    Toy.objects.create(name='baz', price=100, material='wood')
++
++prices = Toy.objects.values('material').annotate(total_price=Sum('price'))
++print("Original prices (values()):")
++print(prices)
++print(f"Type of prices[0]: {type(prices[0])}")
++
++# Pickling the query
++pickled_query = pickle.dumps(prices.query)
++
++# Recreating the queryset
++prices2 = Toy.objects.all()
++prices2.query = pickle.loads(pickled_query)
++
++print("\nRecreated prices (from pickled query):")
++try:
++    print(type(prices2[0]))
++    print(prices2)
++except Exception as e:
++    print(f"\nCRASHED with error: {e}")
++    import traceback
++    traceback.print_exc()

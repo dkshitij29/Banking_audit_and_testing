@@ -1,0 +1,31 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..b1c39c34a5
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,12 @@
++from sympy import cos, sin, Eq, S, Symbol
++from sympy.solvers.solveset import solveset
++
++n = Symbol('n')
++expr = Eq(n*cos(n) - 3*sin(n), 0)
++try:
++    sol = solveset(expr, n, S.Complexes)
++    print(f"Result: {sol}")
++except NotImplementedError as e:
++    print(f"Caught expected NotImplementedError: {e}")
++except Exception as e:
++    print(f"Caught unexpected exception: {type(e).__name__}: {e}")
+diff --git a/sympy/solvers/solveset.py b/sympy/solvers/solveset.py
+index 445be3e0e8..53fef0a30f 100644
+--- a/sympy/solvers/solveset.py
++++ b/sympy/solvers/solveset.py
+@@ -567,7 +567,7 @@ def _solve_trig1(f, symbol, domain):
+ 
+     solns = solveset_complex(g, y) - solveset_complex(h, y)
+     if isinstance(solns, ConditionSet):
+-        raise NotImplementedError
++        return ConditionSet(symbol, Eq(f_original, 0), domain)
+ 
+     if isinstance(solns, FiniteSet):
+         if any(isinstance(s, RootOf) for s in solns):

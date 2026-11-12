@@ -1,0 +1,64 @@
+diff --git a/repro_issue.py b/repro_issue.py
+new file mode 100644
+index 000000000..5a8326da0
+--- /dev/null
++++ b/repro_issue.py
+@@ -0,0 +1,37 @@
++import pytest
++import itertools
++
++# The issue is that when Foo and Bar both have pytestmark,
++# TestDings only gets Foo's pytestmark due to MRO.
++
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++if __name__ == "__main__":
++    # Manually check the attribute since we aren't running full collection here.
++    # In a real pytest run, these marks are collected and stored in the node.
++    # We want to see if TestDings.pytestmark contains both marks.
++    marks = getattr(TestDings, "pytestmark", [])
++    print(f"Marks on TestDings: {marks}")
++    
++    # We expect both 'foo' and 'bar'. 
++    # In the bug state, it will only have 'foo'.
++    has_foo = any(m.name == "foo" for m in marks)
++    has_bar = any(m.name == "bar" for m in marks)
++    
++    print(f"Has foo: {has_foo}")
++    print(f"Has bar: {has_bar}")
++    
++    if not has_foo or not has_bar:
++        print("FAILURE: Expected both foo and bar marks, but some are missing.")
++    else:
++        print("SUCCESS: Both marks are present.")
+diff --git a/src/_pytest/mark/structures.py b/src/_pytest/mark/structures.py
+index 800a25c92..4d78c19e2 100644
+--- a/src/_pytest/mark/structures.py
++++ b/src/_pytest/mark/structures.py
+@@ -357,7 +357,15 @@ class MarkDecorator:
+ 
+ def get_unpacked_marks(obj: object) -> Iterable[Mark]:
+     """Obtain the unpacked marks that are stored on an object."""
+-    mark_list = getattr(obj, "pytestmark", [])
++    mark_list = []
++    if inspect.isclass(obj):
++        for cls in obj.__mro__:
++            marks = getattr(cls, "pytestmark", [])
++            if marks:
++                mark_list.extend(marks)
++    else:
++        mark_list = getattr(obj, "pytestmark", [])
++
+     if not isinstance(mark_list, list):
+         mark_list = [mark_list]
+     return normalize_mark_list(mark_list)

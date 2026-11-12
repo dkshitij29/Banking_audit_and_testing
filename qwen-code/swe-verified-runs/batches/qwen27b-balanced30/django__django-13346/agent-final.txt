@@ -1,0 +1,20 @@
+
+
+All 74 JSON field tests pass (OK, 8 skipped). Here's a concise summary:
+
+## Problem
+
+On MySQL, Oracle, and SQLite, `__in` lookup on JSON key transforms (e.g., `value__key__in=[0, 1, 2]`) didn't work because the RHS values weren't wrapped with `JSON_EXTRACT(%s, '$')`. This wrapping is necessary because `JSON_EXTRACT` returns JSON-encoded values (e.g., `"0"` for the integer 0), so the RHS must also be JSON-encoded for the comparison to succeed.
+
+The `KeyTransformExact` lookup already did this wrapping — but `In` was inherited from `Field`, not overridden for `KeyTransform`.
+
+## Fix (`django/db/models/fields/json.py`)
+
+Added `KeyTransformIn` that overrides `process_rhs` to wrap each RHS value with `JSON_EXTRACT(%s, '$')` on MySQL and SQLite (matching the existing `KeyTransformExact.process_rhs` behavior), and registered it on `KeyTransform`.
+
+## Test Results
+
+- All 74 existing JSON field tests pass (8 skipped as expected)
+- SQL generation now correctly wraps RHS values:
+  - Before: `... IN (0, 1, 2)` 
+  - After: `... IN (JSON_EXTRACT(0, '$'), JSON_EXTRACT(1, '$'), JSON_EXTRACT(2, '$'))`

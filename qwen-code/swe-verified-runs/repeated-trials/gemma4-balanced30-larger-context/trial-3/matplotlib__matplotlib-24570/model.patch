@@ -1,0 +1,50 @@
+diff --git a/lib/matplotlib/offsetbox.py b/lib/matplotlib/offsetbox.py
+index 3a506543ac..bd744abea3 100644
+--- a/lib/matplotlib/offsetbox.py
++++ b/lib/matplotlib/offsetbox.py
+@@ -434,24 +434,28 @@ class VPacker(PackerBase):
+ 
+         whd_list = [c.get_extent(renderer)
+                     for c in self.get_visible_children()]
+-        whd_list = [(w, h, xd, (h - yd)) for w, h, xd, yd in whd_list]
+ 
+-        wd_list = [(w, xd) for w, h, xd, yd in whd_list]
+-        width, xdescent, xoffsets = _get_aligned_offsets(wd_list,
+-                                                         self.width,
+-                                                         self.align)
+-
+-        pack_list = [h for w, h, xd, yd in whd_list]
+-        height, yoffsets_ = _get_packed_offsets(pack_list, self.height,
+-                                                sep, self.mode)
+-
+-        yoffsets = yoffsets_ + [yd for w, h, xd, yd in whd_list]
+-        ydescent = height - yoffsets[0]
+-        yoffsets = height - yoffsets
+-
+-        yoffsets = yoffsets - ydescent
+-
+-        return (width + 2 * pad, height + 2 * pad,
++        # Packing axis is X (horizontal)
++        pack_list = [w for w, h, xd, yd in whd_list]
++        width_packed, xoffsets_packed = _get_packed_offsets(pack_list, self.width,
++                                                                sep, self.mode)
++        
++        last_w = pack_list[-1]
++        group_end = xoffsets_packed[-1] + last_w
++        
++        shift = 0.
++        if self.align in ["right", "bottom"]:
++            shift = self.width - group_end
++        elif self.align == "center":
++            shift = (self.width - group_end) * .5
++            
++        xoffsets = [xoffsets_packed[i] + shift + xd for i, (w, h, xd, yd) in enumerate(whd_list)]
++        yoffsets = [yd for w, h, xd, yd in whd_list]
++        
++        xdescent = shift + whd_list[0][2]
++        ydescent = whd_list[0][3]
++
++        return (width_packed + 2 * pad, max(h + yd for w, h, xd, yd in whd_list) + 2 * pad,
+                 xdescent + pad, ydescent + pad,
+                 list(zip(xoffsets, yoffsets)))
+ 

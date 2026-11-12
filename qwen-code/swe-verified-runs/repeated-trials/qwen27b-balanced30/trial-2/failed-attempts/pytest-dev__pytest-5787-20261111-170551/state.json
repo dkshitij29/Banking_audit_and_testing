@@ -1,0 +1,8 @@
+{
+  "instance_id": "pytest-dev__pytest-5787",
+  "status": "agent_configuration_error",
+  "agent_exit": 1,
+  "agent_seconds": 782.9,
+  "agent_error": "{'message': '[API Error: Connection error. (cause: connect ECONNREFUSED 127.0.0.1:9000)]'}",
+  "error": "{'message': '[API Error: Connection error. (cause: connect ECONNREFUSED 127.0.0.1:9000)]'}"
+}

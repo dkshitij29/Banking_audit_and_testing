@@ -1,0 +1,22 @@
+
+
+---
+
+## Fix Summary
+
+**Problem:** `Dataset.reset_index(drop=True)` kept the dropped coordinate names in `_coord_names` even after removing their entries from `_variables`. This caused `DataVariables.__len__()` to compute `len(_variables) - len(_coord_names)` as a negative number, raising `ValueError: __len__() should return >= 0`.
+
+**Root cause:** Line 4180 of `xarray/core/dataset.py` computed `coord_names = set(new_variables) | self._coord_names` without subtracting the `drop_variables` list.
+
+**Fix (1 line changed):**
+```python
+# Before:
+coord_names = set(new_variables) | self._coord_names
+
+# After:
+coord_names = (set(new_variables) | self._coord_names) - set(drop_variables)
+```
+
+**Test results:** All `reset_index` and `set_index` tests pass (6 tests total). The MVCE from the issue now works correctly — after `reset_index("z", drop=True)`, the dataset's `_coord_names` correctly excludes the dropped index, and `DataVariables.__len__()` returns 0 as expected.
+
+**Memory saved:** Project memory entry created documenting this fix in `.qwen/projects/.../memory/feedback/reset_index_coord_names_fix.md`.

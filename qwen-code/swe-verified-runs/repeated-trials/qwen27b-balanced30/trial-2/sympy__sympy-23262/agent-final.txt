@@ -1,0 +1,15 @@
+
+
+**Explanation:**
+
+The bug was in `_recursive_to_string()` in `sympy/utilities/lambdify.py`. When converting a Python tuple to a string for code generation, single-element tuples were rendered as `(1)` instead of `(1,)`. In Python, `(1)` is just a parenthesized integer, not a tuple — the trailing comma is required for a one-element tuple.
+
+The fix adds a length check: when the argument is a tuple with exactly one element, it returns `"(%s,)"` with the trailing comma. Multi-element tuples are unaffected.
+
+**Test results:**
+- Direct reproduction test: `lambdify([], tuple([1]))` now produces `return (1,)` and returns `(1,)` at runtime ✓
+- Two-element tuples unchanged: `lambdify([], tuple([1, 2]))` still produces `return (1, 2)` ✓
+- `sympy/utilities/tests/test_lambdify.py`: 63 passed, 54 skipped, 0 failures
+- `sympy/printing/tests/test_python.py`: 10 passed, 1 skipped, 1 xfailed, 0 failures
+
+**Memory saved:** Project memory for issue 23262 fix details in `.qwen/projects/.../memory/project/issue_23262_fix.md` (indexed in project MEMORY.md).

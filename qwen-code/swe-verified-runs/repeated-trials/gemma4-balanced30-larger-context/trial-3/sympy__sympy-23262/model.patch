@@ -1,0 +1,42 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..c312517e66
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,17 @@
++import sys
++from unittest.mock import MagicMock
++
++# Mock mpmath to avoid ImportErrors
++mock_mpmath = MagicMock()
++sys.modules["mpmath"] = mock_mpmath
++
++import inspect
++from sympy import lambdify
++
++def test():
++    f = lambdify([], tuple([1]))
++    print(f"Source: {inspect.getsource(f)}")
++
++if __name__ == "__main__":
++    test()
++
+diff --git a/sympy/utilities/lambdify.py b/sympy/utilities/lambdify.py
+index da67263b19..339d429075 100644
+--- a/sympy/utilities/lambdify.py
++++ b/sympy/utilities/lambdify.py
+@@ -959,9 +959,13 @@ def _recursive_to_string(doprint, arg):
+             left, right = "[]"
+         elif isinstance(arg, tuple):
+             left, right = "()"
++            content = ', '.join(_recursive_to_string(doprint, e) for e in arg)
++            if len(arg) == 1:
++                return left + content + ",)"
++            return left + content + right
+         else:
+             raise NotImplementedError("unhandled type: %s, %s" % (type(arg), arg))
+-        return left +', '.join(_recursive_to_string(doprint, e) for e in arg) + right
++        return left + ', '.join(_recursive_to_string(doprint, e) for e in arg) + right
+     elif isinstance(arg, str):
+         return arg
+     else:

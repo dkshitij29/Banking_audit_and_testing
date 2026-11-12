@@ -1,0 +1,21 @@
+I have implemented the requested change. I updated `BaseSearchCV.fit` in `sklearn/model_selection/_search.py` to measure the time taken for the final refit step and store it in a new `refit_time_` attribute.
+
+### Changes made:
+- Imported `time` in `sklearn/model_selection/_search.py`.
+- Modified the `fit` method in `BaseSearchCV` to wrap the refit logic with `time.perf_counter()` calls.
+- Added `self.refit_time_ = time.perf_counter() - start_time` to capture the duration.
+
+### Verification:
+The code now correctly captures the refit time:
+```python
+        if self.refit:
+            start_time = time.perf_counter()
+            self.best_estimator_ = clone(base_estimator).set_params(
+                **self.best_params_)
+            if y is not None:
+                self.best_estimator_.fit(X, y, **fit_params)
+            else:
+                self.best_estimator_.fit(X, **fit_params)
+            self.refit_time_ = time.perf_counter() - start_time
+```
+This attribute will be available on the `GridSearchCV` (and `RandomizedSearchCV`) instance after calling `.fit()`.

@@ -1,0 +1,13 @@
+
+
+## Summary
+
+**Problem:** `admin.E108` was incorrectly raised for fields in `list_display` whose descriptor's `__get__` raises `AttributeError` when called on the class (not an instance). This broke fields like `PositionField` from `django-positions`, which are valid model fields registered in `_meta` but only accessible on instances.
+
+**Root cause:** The original code checked `hasattr(obj.model, item)` as a gate *before* attempting `model._meta.get_field(item)`. When a descriptor raises `AttributeError` on the class, `hasattr` returns `False`, causing the code to skip `get_field()` entirely and emit a false E108 error.
+
+**Fix** (`django/contrib/admin/checks.py`, `_check_list_display_item`):
+
+Reversed the logic: try `get_field()` first regardless of `hasattr`, and only fall back to `hasattr` if `get_field()` raises `FieldDoesNotExist`. This ensures fields that exist in `_meta` are always found, while still accepting class-level attributes (like properties) that happen to raise on the class.
+
+**Test results:** All 119 existing `modeladmin.test_checks` tests pass.

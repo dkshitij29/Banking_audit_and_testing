@@ -1,0 +1,16 @@
+I have identified the root cause and implemented a fix.
+
+### Root Cause
+The issue occurs when a `QuerySet` that uses `values()` or `values_list()` is unpickled and its `query` attribute is manually replaced with a new `sql.Query` object. 
+
+While `QuerySet` preserves its `_iterable_class` during pickling/unpickling, the `query` property's setter only updates the underlying `_query` attribute and does not synchronize `_iterable_class`. If the new query object corresponds to a `values()` or `values_list()` call but the `QuerySet` still points to `ModelIterable` (the default for standard querysets), evaluation fails because it tries to construct model instances from the dictionary results.
+
+### Fix
+I modified the `QuerySet.query` setter in `django/db/models/query.py` to automatically update `_iterable_class` based on the attributes of the new query object:
+- If `values_select` is populated, it determines whether to use `ValuesIterable` or `ValuesListIterable` (depending on whether `annotation_select` is also populated).
+- If `values_select` is empty but `annotation_select` is populated, it defaults to `ValuesListIterable`.
+
+This ensures that even when a query object is swapped out (e.g., via unpickling or manual assignment), the `QuerySet` uses the correct iterator class to process the database results.
+
+### Verification
+I verified the fix using a reproduction script that simulates the unpickling and query replacement scenario described in the issue. The script now correctly identifies the results as dictionaries instead of crashing with an `AttributeError`.

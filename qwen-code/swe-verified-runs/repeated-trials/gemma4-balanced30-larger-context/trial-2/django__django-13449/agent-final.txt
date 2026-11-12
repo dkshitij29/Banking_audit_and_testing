@@ -1,0 +1,15 @@
+I have fixed the issue where `Lag()` with a `DecimalField` crashed on SQLite when used with a `Window` expression.
+
+### Root Cause
+The crash was caused by `SQLiteNumericMixin.as_sqlite` wrapping the `LAG()` function in a `CAST(... AS NUMERIC)` call. When used within a `Window` expression, this resulted in the SQL: `CAST(LAG(...) AS NUMERIC) OVER (...)`. In SQLite, the `OVER` clause must immediately follow the function call, making this syntax invalid and causing an `OperationalError`.
+
+### Fix
+I modified `SQLiteNumericMixin.as_sqlite` in `django/db/models/expressions.py` to check if the expression is being used in a window context (via the `window` attribute). If it is, the `CAST` operation is skipped, allowing the `OVER` clause to follow the `LAG()` function directly.
+
+### Verification Results
+The fix ensures that:
+1. `Lag()` on a `DecimalField` in a window context generates valid SQL: `LAG(...) OVER (...)`.
+2. `Lag()` on a `DecimalField` outside of a window context still correctly includes the `CAST` for `DecimalField` compatibility.
+3. Explicitly setting `output_field=FloatField()` continues to work as expected.
+
+No changes were made to the test suite, and the fix is localized to the core expression handling.

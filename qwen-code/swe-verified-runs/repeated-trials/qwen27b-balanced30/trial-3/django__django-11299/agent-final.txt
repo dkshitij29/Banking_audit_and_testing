@@ -1,0 +1,19 @@
+
+
+**Explanation:**
+
+The bug was in `django/db/models/sql/query.py` in the `_add_q()` method. When `build_where()` is called (used by `CheckConstraint`), it passes `simple_col=True` to `_add_q()` so that column names are generated without table qualification (using `SimpleCol` instead of `Col`). This is necessary because check constraints reference columns by name only.
+
+However, when `_add_q()` recursively processes a nested `Node` (i.e., a nested `Q` object), it was **not** passing the `simple_col` parameter to the recursive call. This meant:
+- Top-level OR children → `simple_col=True` → `SimpleCol` (unqualified, correct)
+- Nested AND children → `simple_col=False` (default) → `Col` (table-qualified, incorrect)
+
+This caused mixed SQL like `("table"."field_1" IS NOT NULL AND "table"."flag" = 1) OR "flag" = 0`, which fails on SQLite and Oracle during table recreation.
+
+**Fix:** Added `simple_col` as the 7th positional argument to the recursive `_add_q()` call for nested `Node` children.
+
+**Test results:**
+- `queries.test_query` — 8 tests ✓
+- `constraints.tests` — 19 tests ✓
+- `migrations.test_operations` — 95 tests ✓
+- End-to-end check constraint creation — SQL produces `CHECK ((("field_1" IS NOT NULL AND "flag" = 1) OR "flag" = 0))` — no table-qualified names ✓

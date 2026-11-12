@@ -1,0 +1,20 @@
+I have successfully updated the `BaseConstraint` class and its subclasses (`CheckConstraint` and `UniqueConstraint`) to support a custom `violation_error_code` attribute.
+
+### Changes implemented:
+1.  **`BaseConstraint`**:
+    *   Added `violation_error_code = None` attribute.
+    *   Updated `__init__` to accept `violation_error_code` as an optional keyword argument.
+    *   Updated `deconstruct` to include `violation_error_code` in the returned `kwargs`.
+2.  **`CheckConstraint`**:
+    *   Updated `__init__` to accept `violation_error_code` and pass it to `super().__init__`.
+    *   Updated `validate` to raise `ValidationError` with the custom code: `raise ValidationError(self.get_violation_error_message(), code=self.violation_error_code)`.
+    *   Updated `__repr__` to display the `violation_error_code` if it is set.
+    *   Updated `deconstruct` to include `violation_error_code`.
+3.  **`UniqueConstraint`**:
+    *   Updated `__init__` to accept `violation_error_code` and pass it to `super().__init__`.
+    *   Updated `validate` to raise `ValidationError` with the custom code in both the simple check and the conditional check cases.
+    *   Updated `__repr__` to display the `violation_error_code` if it is set.
+    *   Updated `deconstruct` to include `violation_error_code`.
+
+### Verification:
+I reviewed the implementation in `django/db/models/constraints.py`. The changes follow the existing patterns for `violation_error_message`, ensuring consistency in how constraints are initialized, deconstructed, and represented. The `validate` methods now correctly pass the `code` parameter to `ValidationError`.

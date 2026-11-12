@@ -1,0 +1,12 @@
+{
+  "instance_id": "pylint-dev__pylint-8898",
+  "status": "ambiguous_failure",
+  "agent_exit": 0,
+  "agent_seconds": 717.08,
+  "input_tokens": 1601714,
+  "output_tokens": 16512,
+  "changed_tests": true,
+  "evaluation_run_id": "qwen27b-balanced30-pylint-dev__pylint-8898-d621f93048",
+  "evaluation_seconds": 36.99,
+  "evaluation_exit": 0
+}

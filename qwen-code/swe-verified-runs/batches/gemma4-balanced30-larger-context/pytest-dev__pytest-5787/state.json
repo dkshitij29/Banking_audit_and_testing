@@ -1,0 +1,13 @@
+{
+  "instance_id": "pytest-dev__pytest-5787",
+  "status": "ambiguous_failure",
+  "agent_exit": 1,
+  "agent_seconds": 141.54,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 1344016,
+  "output_tokens": 3902,
+  "changed_tests": true,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-pytest-dev__pytest-5787-1f45592684",
+  "evaluation_seconds": 33.72,
+  "evaluation_exit": 0
+}

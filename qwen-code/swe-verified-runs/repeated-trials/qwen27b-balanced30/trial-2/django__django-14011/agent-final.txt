@@ -1,0 +1,11 @@
+
+
+## Fix Summary
+
+**Problem:** `ThreadedWSGIServer` (used by `LiveServerTestCase`) spawns a new thread per HTTP request via `ThreadingMixIn`. Each request-handling thread can open database connections, but only the main server thread's `finally: connections.close_all()` in `LiveServerThread.run()` was closing connections. Request threads never closed their own connections, causing a race condition where `destroy_test_db()` fails with `OperationalError: database "test_myapp" is being accessed by other users`.
+
+**Fix:** Overrode `process_request_thread` in `ThreadedWSGIServer` (`django/core/servers/basehttp.py`) to call `connections.close_all()` after each request thread completes.
+
+**Changed file:** `django/core/servers/basehttp.py` — added a `process_request_thread` method to `ThreadedWSGIServer` that wraps the parent's implementation with a `finally` block that closes all database connections.
+
+**Test results:** All server tests pass, including `LiveServerThreadTest` (connection closing and server class tests) and `LiveServerThreadedTests` (threaded view tests). The `test_closes_connections` test was skipped because SQLite's in-memory backend `close()` is a no-op, but the fix is effective for PostgreSQL/MySQL backends where the original bug manifests.

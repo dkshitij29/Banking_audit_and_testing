@@ -1,0 +1,16 @@
+
+
+The fix is complete and all tests pass. Here's a summary:
+
+## Fix for ticket #11551 — `admin.E108` raised on fields accessible only via instance
+
+**Problem:** In `django/contrib/admin/checks.py`, the `_check_list_display_item` method gated the `model._meta.get_field(item)` lookup behind `hasattr(obj.model, item)`. When a descriptor (like `PositionField`) raises `AttributeError` on class access, `hasattr` returns `False`, so `get_field` is never tried — even though the field exists in `_meta`. This produces a false `admin.E108` error.
+
+**Fix:** Removed the `hasattr` gate. Now the code always tries `get_field` first, and falls back to `getattr` only if `FieldDoesNotExist` is raised. E108 is only returned when **both** lookups fail.
+
+**File changed:** `django/contrib/admin/checks.py` — `_check_list_display_item` method
+
+**Test results:**
+- All **119** existing `modeladmin.test_checks` tests: **PASS**
+- All **4** `ListDisplayTests` (E107, E108, E109, valid case): **PASS**
+- **3** new verification tests (descriptor-only field, nonexistent field, M2M via get_field): **PASS**

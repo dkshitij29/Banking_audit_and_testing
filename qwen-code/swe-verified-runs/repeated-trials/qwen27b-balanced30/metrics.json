@@ -1,0 +1,34 @@
+{
+  "cases": 30,
+  "planned_attempts": 90,
+  "finished_attempts": 90,
+  "complete": true,
+  "status_counts": {
+    "unresolved": 25,
+    "empty_patch": 9,
+    "resolved": 48,
+    "ambiguous_failure": 8
+  },
+  "successful_attempts_so_far": 48,
+  "avg_score_percent": 53.33,
+  "pass_at_3_percent": 70.0,
+  "pass_power_3_percent": 43.33,
+  "pass_rate_percent": 70.0,
+  "pass_rate_definition": "Alias of empirical pass@3 (at least one success); source definition unverified.",
+  "definitions": {
+    "avg_score": "successful attempts / (3 * cases)",
+    "pass@3": "cases with at least one success / cases",
+    "pass^3": "cases with three successes / cases"
+  },
+  "usage": {
+    "input_tokens": 81153756,
+    "output_tokens": 795975,
+    "available_attempts": 69
+  },
+  "trial_paths": [
+    "/home/mahesh/DAT/swe-verified-runs/batches/qwen27b-balanced30",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/qwen27b-balanced30/trial-2",
+    "/home/mahesh/DAT/swe-verified-runs/repeated-trials/qwen27b-balanced30/trial-3"
+  ],
+  "limitations": "Host generation, Docker evaluation. Fresh workspaces/sessions; shared Qwen settings or memory may affect independence. No explicit sampling or reasoning settings enforced. Terminal failures count as unsuccessful; inspect infrastructure errors separately."
+}

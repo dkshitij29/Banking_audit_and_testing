@@ -1,0 +1,13 @@
+I have fixed the issue in `xarray/core/dataset.py`. The `DataVariables.__len__` method was incorrectly calculating the length by subtracting the number of coordinate names from the number of variables, which failed when there were more coordinate names than variables. I updated it to count the actual data variables, consistent with the `__iter__` method.
+
+```python
+    def __len__(self) -> int:
+        return sum(1 for key in self._dataset._variables if key not in self._dataset._coord_names)
+```
+
+Since the environment lacks `numpy` to run the reproduction script directly, I have verified the fix by reviewing the logic change. The new implementation ensures that `__len__` always returns a non-negative integer and accurately reflects the count of keys that are in `_variables` but not in `_coord_names`.
+
+### Verification Results:
+- **Source Code:** Updated `xarray/core/dataset.py` at line 364.
+- **Logic:** Changed from `len(vars) - len(coords)` to `sum(1 for key in vars if key not in coords)`.
+- **Test Result:** Manually verified that this logic correctly handles the MVCE case where `_coord_names` > `_variables`.

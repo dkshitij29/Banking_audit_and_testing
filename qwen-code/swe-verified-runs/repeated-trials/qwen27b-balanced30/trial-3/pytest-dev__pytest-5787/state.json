@@ -1,0 +1,12 @@
+{
+  "instance_id": "pytest-dev__pytest-5787",
+  "status": "ambiguous_failure",
+  "agent_exit": 0,
+  "agent_seconds": 727.1,
+  "input_tokens": 2177687,
+  "output_tokens": 14912,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-11a4c85349-pytest-dev__pytest-5787-df386e9e02",
+  "evaluation_seconds": 35.08,
+  "evaluation_exit": 0
+}

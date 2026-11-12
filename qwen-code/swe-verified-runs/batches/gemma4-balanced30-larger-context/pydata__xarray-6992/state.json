@@ -1,0 +1,12 @@
+{
+  "instance_id": "pydata__xarray-6992",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 58.16,
+  "input_tokens": 191534,
+  "output_tokens": 2166,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-pydata__xarray-6992-56e5ffce86",
+  "evaluation_seconds": 80.77,
+  "evaluation_exit": 0
+}

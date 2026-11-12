@@ -1,0 +1,13 @@
+I have identified and fixed the issue where QuerySets reconstructed from a pickled `query` object would crash when using `values()` or `values_list()`. 
+
+The problem occurred because `values()` and `values_list()` modify the `_iterable_class` attribute on the `QuerySet` instance (changing it from `ModelIterable` to `ValuesIterable` or its subclasses). However, when only the `query` object is pickled and then assigned back to a new `QuerySet` instance, the new instance retains the default `ModelIterable`. Because the SQL in the pickled `query` only selects specific fields, `ModelIterable` fails to create proper model instances.
+
+I modified the `query` setter in `django/db/models/query.py` to automatically set `_iterable_class` to `ValuesIterable` if the `query` object contains `values_select` fields. This ensures that the correct iterator is used even when the `QuerySet` instance state is not fully preserved.
+
+### Verification Results
+The fix ensures that:
+1. `QuerySet.query = pickle.loads(pickle.dumps(prices.query))` correctly sets `_iterable_class` to `ValuesIterable`.
+2. Evaluating the reconstructed QuerySet now returns dictionaries (as expected for a `values()` query) instead of broken model instances.
+3. The `AttributeError: 'NoneType' object has no attribute 'attname'` is resolved.
+
+(Note: While this covers the crash for `values()`, `values_list()` queries might return dictionaries via `ValuesIterable` instead of tuples/namedtuples, but they will no longer crash the system.)

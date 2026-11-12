@@ -1,0 +1,14 @@
+
+
+The fix is complete. Here's a summary:
+
+**Bug:** `CheckConstraint` with mixed AND/OR operators generates incorrect SQL on SQLite and Oracle — the AND-clause columns use fully-qualified names (`"table"."column"`) while OR-clause columns don't, causing schema errors during table swaps.
+
+**Root cause:** In `django/db/models/sql/query.py`, the `_add_q()` method accepts a `simple_col` parameter (default `False`). When `build_where()` is called (used by `CheckConstraint`), it passes `simple_col=True` to produce column-only references. However, when `_add_q()` recursively processes nested `Node` children (inner Q-groups), it wasn't forwarding the `simple_col` parameter — so nested groups defaulted to `False`, producing table-qualified `Col` instead of `SimpleCol`.
+
+**Fix:** Added `simple_col` to the recursive `_add_q()` call for `Node` children (1 line changed in `django/db/models/sql/query.py`).
+
+**Verification:**
+- Source code inspection confirms the parameter is now passed through
+- Functional test: `Q(flag=True, field_1__isnull=False) | Q(flag=False)` now produces `(("field_1" IS NOT NULL AND "flag" = 1) OR "flag" = 0)` — no table-qualified names
+- All 5 existing `CheckConstraintTests` pass

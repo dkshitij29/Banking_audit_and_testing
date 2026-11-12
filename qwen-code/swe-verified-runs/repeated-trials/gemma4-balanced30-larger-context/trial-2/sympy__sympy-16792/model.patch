@@ -1,0 +1,35 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..1aa56d7f44
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,29 @@
++import numpy as np
++from sympy import MatrixSymbol
++from sympy.utilities.autowrap import autowrap
++
++def test_autowrap_array_missing():
++    x = MatrixSymbol('x', 2, 1)
++    expr = 1.0
++    print(f"Testing expr = 1.0 with arg x (MatrixSymbol)")
++    f = autowrap(expr, args=(x,), backend='cython')
++    try:
++        result = f(np.array([[1.0, 2.0]]))
++        print(f"Success! Result: {result}")
++    except Exception as e:
++        print(f"Failed with error: {e}")
++
++def test_autowrap_array_present():
++    x = MatrixSymbol('x', 2, 1)
++    expr = x[0,0]
++    print(f"\nTesting expr = x[0,0] with arg x (MatrixSymbol)")
++    f = autowrap(expr, args=(x,), backend='cython')
++    try:
++        result = f(np.array([[1.0, 2.0]]))
++        print(f"Success! Result: {result}")
++    except Exception as e:
++        print(f"Failed with error: {e}")
++
++if __name__ == "__main__":
++    test_autowrap_array_missing()
++    test_autowrap_array_present()

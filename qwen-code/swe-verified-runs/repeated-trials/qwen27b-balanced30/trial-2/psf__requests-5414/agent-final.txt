@@ -1,0 +1,14 @@
+
+
+All existing tests pass. Here's the summary:
+
+**Fix:** In `requests/models.py`, the `prepare_url` method validates ASCII hosts for wildcards (`*`) but not for hosts starting with a dot. A host like `.example.com` has an empty first label and is invalid, but it bypasses IDNA encoding (ASCII-only) and only fails deep in the connection layer with an unclear error.
+
+**Change:** Extended the ASCII host validation from `host.startswith(u'*')` to `host.startswith(u'*') or host.startswith(u'.')`, so both raise `InvalidURL('URL has an invalid label.')` — matching the behavior of the non-ASCII IDNA error path.
+
+**Test results:**
+- `http://.example.com` → raises `InvalidURL` ✓
+- `http://..example.com` → raises `InvalidURL` ✓
+- `http://*.example.com` → raises `InvalidURL` ✓
+- `http://example.com` → prepares normally ✓
+- All 5 existing `test_invalid_url` parametrized tests pass ✓

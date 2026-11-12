@@ -1,0 +1,13 @@
+{
+  "instance_id": "pydata__xarray-6992",
+  "status": "unresolved",
+  "agent_exit": 1,
+  "agent_seconds": 59.36,
+  "agent_error": "{'message': 'Loop detection halted the run (consecutive_identical_tool_calls: the model repeated the same tool call with identical arguments). This is an always-on guard and cannot be disabled via `model.skipLoopDetection`.'}",
+  "input_tokens": 268354,
+  "output_tokens": 1924,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-2-7581567fed-pydata__xarray-6992-4114437cf4",
+  "evaluation_seconds": 76.31,
+  "evaluation_exit": 0
+}

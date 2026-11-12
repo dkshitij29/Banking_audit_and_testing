@@ -1,0 +1,12 @@
+{
+  "instance_id": "django__django-14376",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 84.14,
+  "input_tokens": 179723,
+  "output_tokens": 1632,
+  "changed_tests": false,
+  "evaluation_run_id": "qwen27b-balanced30-django__django-14376-0284a2fb81",
+  "evaluation_seconds": 36.22,
+  "evaluation_exit": 0
+}

@@ -1,0 +1,13 @@
+{
+  "instance_id": "django__django-14404",
+  "status": "unresolved",
+  "agent_exit": 1,
+  "agent_seconds": 829.61,
+  "agent_error": "{'message': 'Loop detection halted the run (turn_tool_call_cap: the turn reached the per-turn tool-call limit). A per-turn tool-call cap was reached. The default is adaptive (allows up to 1000 diverse calls, halting only on repeated calls); an explicitly set `model.maxToolCallsPerTurn` is a hard cap. If the model was repeating the same call, investigate the repetition; otherwise unset the value to use the adaptive default, or raise it (set 0 to disable).'}",
+  "input_tokens": 2689086,
+  "output_tokens": 20074,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-11a4c85349-django__django-14404-4c1da8360f",
+  "evaluation_seconds": 71.19,
+  "evaluation_exit": 0
+}

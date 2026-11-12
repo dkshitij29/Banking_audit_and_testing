@@ -1,0 +1,18 @@
+I have fixed the issue by updating the `Join.equals` method in `django/db/models/sql/datastructures.py`. Previously, this method explicitly ignored the `filtered_relation` attribute, which caused Django to collapse multiple `FilteredRelation` instances for the same underlying relation into a single join. By including `filtered_relation` in the equality check, Django now correctly treats joins with different `FilteredRelation` objects as distinct.
+
+### Verification results:
+Since I cannot run the local Python environment due to missing dependencies, I have verified the logic through code analysis. The `Join.identity` property already includes `filtered_relation`:
+
+```python
+    @property
+    def identity(self):
+        return (
+            self.__class__,
+            self.table_name,
+            self.parent_alias,
+            self.join_field,
+            self.filtered_relation,
+        )
+```
+
+By changing `equals` to use `self.identity == other.identity`, joins with different `FilteredRelation` objects will now correctly return `False` for `equals()`, ensuring they are both preserved in the query.

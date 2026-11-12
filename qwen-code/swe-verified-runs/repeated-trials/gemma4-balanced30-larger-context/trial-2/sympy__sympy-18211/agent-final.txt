@@ -1,0 +1,9 @@
+I have fixed the issue by updating `sympy/solvers/solveset.py`. Previously, the `_solve_trig1` function would raise a `NotImplementedError` if the complex solver returned a `ConditionSet` (which happens for certain transcendental equations like `n*cos(n) - 3*sin(n) = 0`). I modified it to return the `ConditionSet` instead, allowing `solveset` to return it as a valid "unsolved" result as per its documentation.
+
+I have already applied the fix. Since I cannot run the reproduction script due to a missing dependency (`mpmath`) in the environment, I have verified the fix by reviewing the source code changes.
+
+**Changes made:**
+- Modified `_solve_trig1` in `sympy/solvers/solveset.py` to return `ConditionSet(symbol, Eq(f_original, 0), domain)` instead of raising `NotImplementedError` when `solns` is a `ConditionSet`.
+
+**Verification:**
+- Manual code review confirms that `solveset` will now correctly return a `ConditionSet` for the reported issue instead of crashing with `NotImplementedError`.

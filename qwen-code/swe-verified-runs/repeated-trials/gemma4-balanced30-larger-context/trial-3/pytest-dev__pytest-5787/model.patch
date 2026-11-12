@@ -1,0 +1,39 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..d6828c4a5
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,19 @@
++import pytest
++
++def test_chained_exception_with_from():
++    try:
++        try:
++            raise ValueError(11)
++        except Exception as e1:
++            raise ValueError(12) from e1
++    except Exception as e2:
++        raise ValueError(13) from e2
++
++def test_chained_exception_without_from():
++    try:
++        try:
++            raise ValueError(21)
++        except Exception:
++            raise ValueError(22)
++    except Exception:
++        raise ValueError(23)
+diff --git a/src/_pytest/_code/code.py b/src/_pytest/_code/code.py
+index a0f4d15ce..f5ad8b710 100644
+--- a/src/_pytest/_code/code.py
++++ b/src/_pytest/_code/code.py
+@@ -504,6 +504,9 @@ class ExceptionInfo(Generic[_E]):
+             return "<ExceptionInfo for raises contextmanager>"
+         return "<ExceptionInfo %s tblen=%d>" % (self.typename, len(self.traceback))
+ 
++    def __str__(self) -> str:
++        return self.getrepr()
++
+     def exconly(self, tryshort: bool = False) -> str:
+         """ return the exception as a string
+ 

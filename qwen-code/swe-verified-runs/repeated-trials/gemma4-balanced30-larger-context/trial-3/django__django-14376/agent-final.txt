@@ -1,0 +1,17 @@
+I have replaced the deprecated `db` and `passwd` keyword arguments with `database` and `password` in `django/db/backends/mysql/base.py`.
+
+```python
+<<<<
+        if settings_dict['NAME']:
+            kwargs['db'] = settings_dict['NAME']
+        if settings_dict['PASSWORD']:
+            kwargs['passwd'] = settings_dict['PASSWORD']
+====
+        if settings_dict['NAME']:
+            kwargs['database'] = settings_dict['NAME']
+        if settings_dict['PASSWORD']:
+            kwargs['password'] = settings_dict['PASSWORD']
+>>>>
+```
+
+No tests were executable in the current environment, but the change follows the recommended migration path from `mysqlclient`.

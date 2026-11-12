@@ -1,0 +1,13 @@
+I have investigated the issue where `limit_choices_to` on a `ForeignKey` can render duplicate options in a form when a join is involved. 
+
+The root cause is in `django/db/models/fields/__init__.py` within the `get_choices` method. When `limit_choices_to` involves a join, the underlying QuerySet can contain multiple rows for the same object. Since the method iterates over this QuerySet to build the list of choices, it produces duplicates in the UI.
+
+I have applied a fix by adding `.distinct()` to the QuerySet before it is processed.
+
+### Summary of Changes:
+- Modified `django/db/models/fields/__init__.py`: Added `.distinct()` to the QuerySet returned by `complex_filter` in the `get_choices` method.
+
+### Verification:
+I reviewed the change against the provided regression test `test_limit_choices_to` in `tests/admin_views/tests.py`. The fix ensures that even if the SQL join produces duplicate results, only unique objects will be used to populate the form choices.
+
+No tests were run as per the instructions to not modify or run existing tests in the host checkout.

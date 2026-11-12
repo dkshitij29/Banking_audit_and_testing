@@ -1,0 +1,21 @@
+I have analyzed the issue where `limit_choices_to` on a `ForeignKey` field can produce duplicate options in a form field when a join is involved.
+
+### Root Cause
+The issue occurs in `django/db/models/fields/__init__.py` within the `Field.get_choices` method. When `limit_choices_to` is specified with a join (e.g., a query involving a `ManyToManyField`), the queryset returned by `complex_filter(limit_choices_to)` can contain multiple rows for the same related object. Because `get_choices` iterates over this queryset and generates a choice for every row, it results in duplicate options in the final list.
+
+### Fix
+I have updated the `get_choices` method in `django/db/models/fields/__init__.py` to call `.distinct()` on the queryset after applying `complex_filter(limit_choices_to)`. This ensures that only unique objects are used to generate choices, effectively eliminating the duplicates.
+
+```python
+# /home/mahesh/DAT/swe-verified-runs/repeated-trials/gemma4-balanced30-larger-context/trial-2/django__django-13315/workspace/django/db/models/fields/__init__.py
+
+# Before:
+qs = rel_model._default_manager.complex_filter(limit_choices_to)
+
+# After:
+qs = rel_model._default_manager.complex_filter(limit_choices_to).distinct()
+```
+
+The fix is minimal and addresses the root cause while maintaining compatibility with existing behavior.
+
+No tests were run due to missing dependencies (`asgiref`), but the code change correctly targets the reported bug.

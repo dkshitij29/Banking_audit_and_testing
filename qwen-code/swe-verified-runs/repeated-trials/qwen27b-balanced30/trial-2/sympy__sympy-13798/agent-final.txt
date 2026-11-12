@@ -1,0 +1,15 @@
+
+
+The change is correct and minimal. Let me summarize:
+
+## Explanation
+
+**Problem:** The `latex()` function's `mul_symbol` parameter only accepted 4 hardcoded values (`None`, `"dot"`, `"times"`, `"ldot"`). Users couldn't supply custom multiplication symbols like `\,` (thin space).
+
+**Fix:** In `sympy/printing/latex.py`, replaced the direct dictionary lookup (`mul_symbol_table[self._settings['mul_symbol']]`) with a conditional check:
+- If the value is one of the 4 recognized keys, use the table mapping (backward compatible)
+- Otherwise, pass the value through as-is (new custom behavior)
+
+This applies to both `mul_symbol_latex` (for variable multiplication) and `mul_symbol_latex_numbers` (for number/scientific notation separation).
+
+**Limitation:** Could not run the full sympy test suite because this older sympy version (1.1.x dev) has a Python 3.11 incompatibility (`from collections import Mapping` was moved to `collections.abc`). The pure-Python logic tests confirmed all 4 built-in values work correctly and custom values pass through. The change is backward compatible — existing tests in `test_latex_mul_symbol` will continue to pass.

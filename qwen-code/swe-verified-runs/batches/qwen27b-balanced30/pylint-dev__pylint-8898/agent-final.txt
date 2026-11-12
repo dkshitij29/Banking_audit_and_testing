@@ -1,0 +1,15 @@
+
+
+All 76 config tests pass. Here's a summary:
+
+## Fix Summary
+
+**Problem:** The `bad-names-rgxs` option (and other `regexp_csv` type options) naively splits on commas, breaking regex patterns that contain commas inside brackets, e.g., `(foo{1,3})` gets split into `(foo{1` and `3})`, causing a crash.
+
+**Fix:** In `pylint/config/argument.py`, replaced the `_regexp_csv_transfomer`'s use of `_csv_transformer` (which splits on all commas) with a new `_split_regexp_csv` function that tracks bracket nesting depth (`()`, `{}`, `[]`) and only splits on commas at depth 0.
+
+**Changes:**
+1. **`pylint/config/argument.py`** — Added `_split_regexp_csv()` that respects bracket nesting, updated `_regexp_csv_transfomer()` to use it.
+2. **`tests/config/test_config.py`** — Updated `test_csv_regex_error` to test an actually invalid regex with multiple patterns, and added `test_csv_regex_with_comma_in_brackets` as a regression test.
+
+**Test results:** All 76 config tests pass.

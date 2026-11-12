@@ -1,0 +1,18 @@
+
+
+The fix is already applied. Here's the summary:
+
+## Fix
+
+**File:** `django/contrib/admin/sites.py` — `catch_all_view()` method
+
+**Problem:** When `FORCE_SCRIPT_NAME` is set, `request.path_info` does not include the script name prefix, so the redirect URL in `catch_all_view()` was missing it. For example, with `FORCE_SCRIPT_NAME='/PREFIX/'`, a request to `/PREFIX/admin/something` would redirect to `/admin/something/` instead of `/PREFIX/admin/something/`.
+
+**Fix:** Changed the redirect from `HttpResponsePermanentRedirect(path)` (which used `request.path_info`) to `HttpResponsePermanentRedirect('%s/' % request.path)`. The `request.path` includes the `FORCE_SCRIPT_NAME` prefix, so the redirect now preserves it. The `resolve()` call still correctly uses `request.path_info` for URL matching.
+
+```diff
+-                    return HttpResponsePermanentRedirect(path)
++                    return HttpResponsePermanentRedirect('%s/' % request.path)
+```
+
+**Tests:** Could not run the Django test suite — the workspace's `.venv` is missing dependencies and the `tests/settings` module is not available in this checkout. The fix is a single-line change matching the PR at https://github.com/django/django/pull/14404.

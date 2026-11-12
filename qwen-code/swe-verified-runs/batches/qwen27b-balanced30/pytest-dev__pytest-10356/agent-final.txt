@@ -1,0 +1,17 @@
+
+
+## Summary
+
+**Problem:** When a test class inherits from multiple base classes, each decorated with `@pytest.mark.*`, only the marks from the first base class (per MRO) were collected. For example, `class TestDings(Foo, Bar)` where `Foo` has `@pytest.mark.foo` and `Bar` has `@pytest.mark.bar` would only have the `foo` marker.
+
+**Root cause:** `get_unpacked_marks()` in `src/_pytest/mark/structures.py` used `getattr(obj, "pytestmark", [])`, which follows Python's MRO and returns only the first match — losing marks from other base classes.
+
+**Fix:** Added a `collect_mro_marks()` helper that walks the class's `__mro__` and collects `pytestmark` from each class's own `__dict__`, deduplicating by mark name (most-derived class wins). Modified `get_unpacked_marks()` to call this helper for class objects.
+
+**Changed file:** `src/_pytest/mark/structures.py` — added `collect_mro_marks()` function and a call to it from `get_unpacked_marks()` when `obj` is a type.
+
+**Test results:**
+- `testing/test_mark.py` — 88 passed, 1 xfailed ✓
+- `testing/test_collection.py` — 83 passed, 1 skipped, 1 xfailed ✓
+- `testing/test_mark_expression.py` — 84 passed, 1 skipped, 1 xfailed ✓
+- End-to-end integration test confirms `-m foo` and `-m bar` both select the test from `class TestDings(Foo, Bar)` ✓

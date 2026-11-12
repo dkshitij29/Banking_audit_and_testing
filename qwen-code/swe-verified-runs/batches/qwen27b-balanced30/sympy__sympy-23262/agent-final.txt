@@ -1,0 +1,19 @@
+
+
+The fix is complete. Here's a summary:
+
+**Bug**: The `_recursive_to_string` function in `sympy/utilities/lambdify.py` builds Python tuples as `"(" + elements + ")"` without a trailing comma for single-element tuples. In Python, `(1)` is just the integer `1` in parentheses, while `(1,)` is a tuple.
+
+**Fix**: Added a check for single-element tuples to produce `"(elem,)"` instead of `"(elem)"`.
+
+**Change** in `sympy/utilities/lambdify.py`, `_recursive_to_string()`:
+- The `', '.join(...)` result is now stored in a variable `elements`
+- For single-element tuples: returns `"(%s,)" % elements`
+- For multi-element tuples and lists: unchanged behavior
+
+**Test results**: All cases pass:
+- `lambdify([], tuple([1]))` → `return (1,)` → returns `(1,)` ✓
+- `lambdify([], tuple([1, 2]))` → `return (1, 2)` → returns `(1, 2)` ✓
+- `lambdify([], tuple([]))` → `return ()` → returns `()` ✓
+- `lambdify([], ((1,), (2,)))` → `return ((1,), (2,))` → returns `((1,), (2,))` ✓
+- `lambdify([], [1])` → `return [1]` → returns `[1]` ✓ (lists unaffected)

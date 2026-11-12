@@ -1,0 +1,21 @@
+
+
+## Summary
+
+**Fix:** Added an early return in `nthroot_mod` to handle the case `a % p == 0`, where `x = 0` is the only root of `x^n ≡ 0 (mod p)` for prime `p`.
+
+**File changed:** `sympy/ntheory/residue_ntheory.py` — added 4 lines after the integer parsing, before the main algorithm:
+
+```python
+if a % p == 0:
+    if all_roots:
+        return [0]
+    return 0
+```
+
+**Why:** When `a % p == 0` and `(p-1) % n == 0`, the function previously entered `_nthroot_mod1(0, ...)` which called `discrete_log` on `s=0`, causing a `ValueError: Log does not exist`. For prime `p`, the only solution to `x^n ≡ 0 (mod p)` is `x = 0`.
+
+**Test results:**
+- All existing tests in `test_residue.py` pass (1 passed)
+- Exhaustive verification for all primes 5–100 and all `q` values passed (including `a=0`)
+- The original issue's example `nthroot_mod(17*17, 5, 17)` now correctly returns `0`

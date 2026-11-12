@@ -1,0 +1,12 @@
+{
+  "instance_id": "sympy__sympy-18199",
+  "status": "unresolved",
+  "agent_exit": 0,
+  "agent_seconds": 86.05,
+  "input_tokens": 443116,
+  "output_tokens": 2721,
+  "changed_tests": false,
+  "evaluation_run_id": "trial-3-dfd6869de1-sympy__sympy-18199-359933980b",
+  "evaluation_seconds": 149.42,
+  "evaluation_exit": 0
+}

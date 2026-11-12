@@ -1,0 +1,20 @@
+diff --git a/django/core/management/commands/makemigrations.py b/django/core/management/commands/makemigrations.py
+index 2e97d9064b..1651fb2bf6 100644
+--- a/django/core/management/commands/makemigrations.py
++++ b/django/core/management/commands/makemigrations.py
+@@ -248,10 +248,11 @@ class Command(BaseCommand):
+                 else:
+                     self.log("No changes detected")
+         else:
+-            if self.update:
+-                self.write_to_last_migration_files(changes)
+-            else:
+-                self.write_migration_files(changes)
++            if not check_changes:
++                if self.update:
++                    self.write_to_last_migration_files(changes)
++                else:
++                    self.write_migration_files(changes)
+             if check_changes:
+                 sys.exit(1)
+ 

@@ -1,0 +1,10 @@
+I have fixed the issue by ensuring that database connections are closed after each request in the `ThreadedWSGIServer`.
+
+Since `ThreadedWSGIServer` uses a thread-per-request model, worker threads could keep database connections open even after the main `LiveServerThread` attempted to shut down. I modified `WSGIRequestHandler.handle` in `django/core/servers/basehttp.py` to call `connections.close_all()` at the end of the request handling loop. This ensures that each worker thread cleans up its connections, preventing the `OperationalError` when the test suite tries to destroy the test database.
+
+### Verification Results:
+I have updated the server's request handling logic to include explicit connection closure.
+- **File modified:** `django/core/servers/basehttp.py`
+- **Change:** Added `from django.db import connections` and called `connections.close_all()` in `WSGIRequestHandler.handle()`.
+
+I attempted to run the relevant tests using `tests/servers/test_liveserverthread.py` but were unable to run them as the environment lacks the necessary dependencies to initialize the full Django test suite and server components. However, the fix addresses the root cause described in the issue report.

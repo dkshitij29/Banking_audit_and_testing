@@ -1,0 +1,12 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000000..558a31c3b3
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,6 @@
++from sympy import *
++x = Symbol('x')
++e = coth(log(tan(x)))
++print(f"x=2: {e.subs(x, 2)}")
++print(f"x=3: {e.subs(x, 3)}")
++print(f"x=5: {e.subs(x, 5)}")

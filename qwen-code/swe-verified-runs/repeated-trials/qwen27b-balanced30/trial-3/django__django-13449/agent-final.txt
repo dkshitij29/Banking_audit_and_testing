@@ -1,0 +1,29 @@
+
+
+The fix is complete. Here's a summary:
+
+**Problem:** `Lag()` (and other window functions like `Lead`, `FirstValue`, etc.) with a `DecimalField` crashed on SQLite with `OperationalError: near "OVER": syntax error`.
+
+**Root cause:** `SQLiteNumericMixin.as_sqlite()` wraps DecimalField expressions with `CAST(... AS NUMERIC)`. When `Window.as_sql()` called `compiler.compile()` on the inner expression, it produced:
+```sql
+CAST(LAG("amount", 7) AS NUMERIC) OVER (PARTITION BY ... ORDER BY ...)
+```
+This is invalid — `CAST()` should wrap the entire `expr OVER (window)`, not just the inner expression.
+
+**Fix** (`django/db/models/expressions.py`):
+1. **`Window._compile_expr()`** — Compiles the inner expression via `expr.as_sql()` directly, bypassing vendor-specific wrapping (i.e., `as_sqlite`) to prevent premature CAST.
+2. **`Window.as_sqlite()`** — Applies `CAST(... AS NUMERIC)` to the entire `expr OVER (window)` SQL string, only for DecimalField output.
+3. **`Window.as_sql()`** — Uses `_compile_expr()` instead of `compiler.compile()` for the inner expression.
+
+**Correct SQL output:**
+```sql
+CAST(LAG("amount", 7) OVER (PARTITION BY ... ORDER BY ...) AS NUMERIC) AS "w"
+```
+
+**Test results:**
+- All 49 window function tests pass (3 skipped)
+- All 154 expression tests pass (2 skipped)
+- Manual verification confirms correct CAST placement for `Lag`, `Lead`, `FirstValue`, `LastValue`, `NthValue` with DecimalField
+- FloatField/IntegerField window functions remain unaffected (no CAST)
+
+**Memory saved:** Project memory entry for Django #13449 fix under project memory directory.

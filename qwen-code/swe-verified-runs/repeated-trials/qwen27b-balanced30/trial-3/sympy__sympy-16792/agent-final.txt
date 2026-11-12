@@ -1,0 +1,27 @@
+
+
+The fix is complete. Here's a concise summary:
+
+## Explanation
+
+**Root cause:** In `sympy/utilities/codegen.py`, when `CodeGen.routine()` processes a user-provided `argument_sequence`, any symbol not found in the expression's free symbols gets a bare `InputArgument(symbol)` created **without** dimension metadata. For a `MatrixSymbol` like `x` in `autowrap(1.0, args=(x,))`, this means the C code generator sees no `dimensions` and emits `double x` instead of `double *x`.
+
+**Fix:** In all 4 `routine()` methods (C, Fortran, Julia, Octave/Rust backends), when creating a fallback `InputArgument` for a symbol not in the expression, check if it's a `MatrixSymbol` and include its shape as `dimensions`:
+
+```python
+if isinstance(symbol, MatrixSymbol):
+    dims = tuple([(S.Zero, dim - 1) for dim in symbol.shape])
+    new_args.append(InputArgument(symbol, dimensions=dims))
+else:
+    new_args.append(InputArgument(symbol))
+```
+
+## Test results
+
+- **Original reproducer** — `autowrap(1.0, args=(MatrixSymbol('x', 2, 1),), backend='cython')` now returns `1.0` correctly
+- **All 9 Cython tests pass** — `test_wrap_twice_c_cython`, `test_autowrap_trace_C_Cython`, `test_autowrap_matrix_vector_C_cython`, `test_autowrap_matrix_matrix_C_cython`, `test_ufuncify_C_Cython`, `test_issue_10274_C_cython`, `test_issue_15337_C_cython`, `test_autowrap_custom_printer`, `test_ufuncify_numpy`
+- 7 f2py tests fail due to f2py not being available in the environment (pre-existing, unrelated)
+
+**Memories saved:**
+- User memory: Memory saving policy (announce what's saved each turn)
+- Project memory: Autowrap cython matrix arg bug fix (issue 16792)

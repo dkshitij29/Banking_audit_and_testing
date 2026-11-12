@@ -1,0 +1,9 @@
+
+
+**Fix:** Changed `request.path_info` to `request.path` in `catch_all_view()` (`django/contrib/admin/sites.py`).
+
+**Explanation:** `request.path_info` strips the `SCRIPT_NAME` prefix, so when `FORCE_SCRIPT_NAME` is set, the redirect URL loses the prefix. Using `request.path` preserves the full path including the forced script name.
+
+**Test results:**
+- All 23 `AdminSiteFinalCatchAllPatternTests` pass
+- Manual verification confirms: with `FORCE_SCRIPT_NAME='/FORCED_PREFIX/'`, `request.path` is `/FORCED_PREFIX/admin/unknown-path` (correct redirect target) while `request.path_info` is `/admin/unknown-path` (buggy, missing prefix)

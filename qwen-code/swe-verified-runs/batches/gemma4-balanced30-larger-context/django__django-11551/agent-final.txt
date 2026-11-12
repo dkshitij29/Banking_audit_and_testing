@@ -1,0 +1,16 @@
+The issue was fixed by refactoring `_check_list_display_item` in `django/contrib/admin/checks.py`. The previous implementation incorrectly relied on `hasattr(obj.model, item)` as a gatekeeper; if it returned `False`, it immediately raised `admin.E108`. This failed for fields like `PositionField` where `hasattr` returns `False` on the model class but the field is still accessible via `get_field`. 
+
+The updated logic now attempts `get_field` first, and falls back to `getattr` (with a final `AttributeError` check) if `get_field` fails, ensuring that `admin.E108` is only raised when neither method successfully retrieves a field.
+
+I have verified the change against the logic described in the issue report.
+
+**Summary of Changes:**
+- Modified `django/contrib/admin/checks.py`:
+    - Removed the `elif hasattr(obj.model, item):` block.
+    - Restructured the `else` block to attempt `get_field` first.
+    - Added a nested `try-except` for `getattr` as a fallback.
+    - Ensured `admin.E108` is only returned if both lookups fail.
+    - Maintained `admin.E109` check for `ManyToManyField`.
+
+**Verification:**
+Manual code inspection confirms the implementation matches the "correct behavior" code block provided in the issue description. No tests could be run as the environment is a host checkout and specific dependencies for the `django-positions` library are not available.

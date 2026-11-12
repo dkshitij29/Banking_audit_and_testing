@@ -1,0 +1,10 @@
+{
+  "instance_id": "pytest-dev__pytest-10356",
+  "status": "ambiguous_failure",
+  "agent_exit": 124,
+  "agent_seconds": 1200.12,
+  "changed_tests": false,
+  "evaluation_run_id": "gemma4-balanced30-larger-context-pytest-dev__pytest-10356-47383a95ab",
+  "evaluation_seconds": 35.18,
+  "evaluation_exit": 0
+}

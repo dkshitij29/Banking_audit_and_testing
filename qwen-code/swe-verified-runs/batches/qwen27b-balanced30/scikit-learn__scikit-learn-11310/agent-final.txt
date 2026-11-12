@@ -1,0 +1,35 @@
+
+
+The fix is complete. Here's a summary:
+
+## Changes
+
+**File:** `sklearn/model_selection/_search.py`
+
+1. Added `import time` (line 20)
+2. Wrapped the refit block with timing in `BaseSearchCV.fit()`:
+   - `start_time = time.time()` before cloning and fitting
+   - `self.refit_time_ = time.time() - start_time` after the `.fit()` call
+
+The `refit_time_` attribute is set **only when `refit=True`** (it's inside the `if self.refit:` block), so it won't exist when `refit=False`.
+
+## Diff
+```diff
++import time
+...
+         if self.refit:
++            start_time = time.time()
+             self.best_estimator_ = clone(base_estimator).set_params(
+                 **self.best_params_)
+             if y is not None:
+                 self.best_estimator_.fit(X, y, **fit_params)
+             else:
+                 self.best_estimator_.fit(X, **fit_params)
++            self.refit_time_ = time.time() - start_time
+```
+
+## Testing
+
+Could not run the full test suite because the workspace's C extensions can't be built (`numpy.distutils` incompatibility with the modern Python environment, and the old Python 2/3-compatible source is incompatible with the system-installed sklearn 1.7.2). Syntax was verified with `py_compile` and AST parsing confirmed the `refit_time_` assignment and `import time` are in place.
+
+Both `GridSearchCV` and `RandomizedSearchCV` inherit from `BaseSearchCV`, so they both get the `refit_time_` attribute automatically.

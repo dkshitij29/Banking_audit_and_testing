@@ -1,0 +1,11 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..179d2054
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,5 @@
++import requests
++try:
++    requests.get("http://.example.com")
++except Exception as e:
++    print(f"Caught exception: {type(e).__name__}: {e}")

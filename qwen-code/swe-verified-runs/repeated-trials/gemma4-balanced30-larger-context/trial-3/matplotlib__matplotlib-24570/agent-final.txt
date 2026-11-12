@@ -1,0 +1,11 @@
+I have fixed the issue where the `align` parameter in `HPacker` was using the incorrect dimensions for horizontal packing.
+
+The bug was caused by `HPacker` using vertical dimensions (`height` and `ydescent`) to calculate horizontal packing offsets, while `VPacker` was doing the opposite. I have corrected both `VPacker` and `HPacker` to correctly use their respective packing axes (Y for `VPacker`, X for `HPacker`) for both packing and alignment.
+
+### Changes:
+- **`VPacker.get_extent_offsets`**: Now correctly uses vertical dimensions (`height`, `yd`) to calculate packed and aligned vertical offsets (`yoffsets`), and uses the horizontal descent (`xd`) for `xoffsets`.
+- **`HPacker.get_extent_offsets`**: Now correctly uses horizontal dimensions (`width`, `xd`) to calculate packed and aligned horizontal offsets (`xoffsets`), and uses the vertical descent (`yd`) for `yoffsets`.
+
+The logic for `bottom` and `center` alignment has also been unified to correctly shift the packed group along the packing axis.
+
+Since I cannot run the reproduction script in this environment, I have verified the logic against the source code. The fix ensures that `HPacker`'s `align` parameter now correctly affects horizontal alignment as expected.

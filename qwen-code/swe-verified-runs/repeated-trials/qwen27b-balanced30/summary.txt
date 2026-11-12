@@ -1,0 +1,7 @@
+Completed attempts: 90/90
+Version / model: see original batch versions.txt and manifest.json
+Avg Score: 53.33% (48/90)
+Pass Rate (= pass@3 here): 70.0% (21/30)
+pass@3: 70.0%
+pass^3: 43.33% (13/30)
+Reports: /home/mahesh/DAT/swe-verified-runs/repeated-trials/qwen27b-balanced30

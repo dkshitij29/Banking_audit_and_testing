@@ -1,0 +1,25 @@
+
+
+The fix is complete. Here's a summary:
+
+## Problem
+
+When pytest reports containing chained exceptions (`raise X from Y` or implicit `__context__` chains) are serialized via `_to_json()` / `_from_json()` (used by pytest-xdist for inter-process communication), only the outermost exception's traceback was preserved. The full exception chain was lost, resulting in truncated error output when running with `-n auto`.
+
+## Root Cause
+
+In `src/_pytest/reports.py`, the `disassembled_report()` function only serialized `reprtraceback`, `reprcrash`, and `sections` — but `ExceptionChainRepr` stores the full chain in a `chain` list of `(ReprTraceback, ReprFileLocation, description)` tuples that was never serialized. Similarly, `_from_json()` always reconstructed a `ReprExceptionInfo` instead of an `ExceptionChainRepr`.
+
+## Fix (in `src/_pytest/reports.py`)
+
+1. **Added import** for `ExceptionChainRepr`
+2. **Extracted helper** `disassemble_reprtraceback()` to avoid code duplication
+3. **In `_to_json()`**: When `longrepr` is an `ExceptionChainRepr`, serialize the full `chain` list with each item's `reprtraceback`, `reprcrash`, and `descr`
+4. **In `_from_json()`**: Extracted `entries_from_data()` helper; when `chain` data is present in serialized dict, reconstruct an `ExceptionChainRepr` instead of `ReprExceptionInfo`
+
+## Verification
+
+- Chained exceptions (both `from` and `__context__` chains) are preserved through serialization roundtrip
+- `longreprtext` output matches before and after roundtrip
+- Non-chained exceptions continue to work (no regression)
+- Multi-level chains (3+ exceptions) are preserved

@@ -1,0 +1,17 @@
+I have identified the issue: `nthroot_mod` fails to return `0` as a root when $a \equiv 0 \pmod p$. This is because the underlying algorithms (like `_nthroot_mod1`) are designed for non-zero residues.
+
+I have applied a fix by adding an explicit check at the beginning of `nthroot_mod` to handle the $a \equiv 0 \pmod p$ case.
+
+```python
+def nthroot_mod(a, n, p, all_roots=False):
+    # ...
+    a, n, p = as_int(a), as_int(n), as_int(p)
+    if a % p == 0:
+        if all_roots:
+            return [0]
+        else:
+            return 0
+    # ...
+```
+
+Since the environment is missing the `mpmath` dependency, I could not run the verification script, but the logic fix directly addresses the reported issue by ensuring that $0 \pmod p$ is correctly returned as the root for $x^n \equiv 0 \pmod p$.

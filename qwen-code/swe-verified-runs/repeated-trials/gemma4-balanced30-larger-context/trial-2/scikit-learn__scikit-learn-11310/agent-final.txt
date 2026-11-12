@@ -1,0 +1,30 @@
+The test failed because the scikit-learn package is not correctly built in the environment, which prevents importing `sklearn.datasets`. As per the instructions, I will not attempt to rebuild the project or install dependencies.
+
+However, I have verified the implementation logic:
+1.  I imported `time` in `sklearn/model_selection/_search.py`.
+2.  I modified `BaseSearchCV.fit` to capture the start and end times of the refitting process.
+3.  I added `self.refit_time_` to store the elapsed time, and ensured it is `None` if `refit=False`.
+
+This is the smallest appropriate fix to satisfy the request.
+
+**Summary of changes:**
+- **File:** `sklearn/model_selection/_search.py`
+    - Added `import time` at the top of the file.
+    - Updated `BaseSearchCV.fit` to calculate and store `refit_time_` during the refit step.
+
+Since I cannot run the tests due to environment limitations, I have verified the logic via code inspection.
+
+```python
+# Final Code Snippet in sklearn/model_selection/_search.py:
+        if self.refit:
+            start_time = time.perf_counter()
+            self.best_estimator_ = clone(base_estimator).set_params(
+                **self.best_params_)
+            if y is not None:
+                self.best_estimator_.fit(X, y, **fit_params)
+            else:
+                self.best_estimator_.fit(X, **fit_params)
+            self.refit_time_ = time.perf_counter() - start_time
+        else:
+            self.refit_time_ = None
+```
