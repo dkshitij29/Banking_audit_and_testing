@@ -12,7 +12,8 @@ import run_verified_batch as runner
 
 
 TERMINAL = {"resolved", "unresolved", "empty_patch", "runner_error", "interrupted",
-            "evaluation_error", "evaluation_timeout", "infrastructure_failure", "ambiguous_failure"}
+            "evaluation_error", "evaluation_timeout", "infrastructure_failure", "ambiguous_failure",
+            "context_limit_failure", "tool_response_failure"}
 
 
 def report(root, manifests, paths):
@@ -138,6 +139,8 @@ def main():
                 print(f"Trial {number}, issue {index}/{len(original['tasks'])}: {task['instance_id']}", flush=True)
                 try:
                     runner.run_task(path, task, original["config"])
+                except runner.AgentConfigurationError:
+                    raise
                 except Exception as error:
                     folder = path / task["instance_id"]
                     folder.mkdir(exist_ok=True)

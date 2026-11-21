@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent
 DATASET = "SWE-bench/SWE-bench_Verified"
 
 
+class AgentConfigurationError(RuntimeError):
+    """Abort a batch when the agent cannot access its configured model."""
+
+
 def save(path, value):
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2) + "\n")
@@ -166,6 +170,19 @@ def run_task(batch, task, config):
         save(state_path, state)
         try:
             result = read_agent_result(folder / "agent-output.json")
+            if result.get("is_error"):
+                message = str(result.get("error", result))
+                state["agent_error"] = message
+                if any(marker in message.lower() for marker in
+                       ("404", "does not exist", "401", "403", "unauthorized", "invalid api key",
+                        "econnrefused", "connection error", "connection reset", "fetch failed")):
+                    state.update(status="agent_configuration_error", error=message)
+                    save(state_path, state)
+                    raise AgentConfigurationError(message)
+                if "context is too large" in message.lower():
+                    state["failure_category"] = "context_limit_failure"
+                elif "without visible progress" in message.lower():
+                    state["failure_category"] = "tool_response_failure"
             (folder / "agent-final.txt").write_text(str(result.get("result", "")))
             usage = result.get("usage", {})
             for key in ("input_tokens", "output_tokens"):
@@ -188,7 +205,7 @@ def run_task(batch, task, config):
 
     prediction = json.loads((folder / "prediction.jsonl").read_text())
     if not prediction["model_patch"].strip():
-        state["status"] = "empty_patch"
+        state["status"] = state.get("failure_category", "empty_patch")
         save(state_path, state)
         return
     # The same identifier safely resumes an unchanged saved prediction.
@@ -278,6 +295,8 @@ def main():
             print(f"[{index}/{len(manifest['tasks'])}] {task['instance_id']}", flush=True)
             try:
                 run_task(batch, task, config)
+            except AgentConfigurationError:
+                raise
             except Exception as error:
                 folder = batch / task["instance_id"]
                 folder.mkdir(exist_ok=True)
