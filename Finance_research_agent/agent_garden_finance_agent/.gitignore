@@ -1,0 +1,18 @@
+# Secrets and local settings
+.env
+TradingAgents/.env
+.vscode/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+.pytest_cache/
+
+# Run-time lock files left by the memory log
+*.lock
+
+# Word's temporary files
+~$*
