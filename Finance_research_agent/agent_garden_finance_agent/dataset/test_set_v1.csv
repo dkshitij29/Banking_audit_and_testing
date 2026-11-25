@@ -1,0 +1,21 @@
+sample_id,ticker,sector,date,period,market,spy_prev_20d_pct,spy_next_20d_pct,model_may_know_period,scoreable_after
+P2-AMZN,AMZN,Consumer discretionary,2025-03-10,P2,falling,-6.7,-10.4,likely,2025-04-08
+P5-AMZN,AMZN,Consumer discretionary,2026-04-06,P5,rising,-1.7,9.8,less likely,2026-05-05
+P1-CAT,CAT,Industrials,2024-08-19,P1,flat,0.9,0.5,likely,2024-09-18
+P3-CAT,CAT,Industrials,2025-04-21,P3,rising,-8.9,12.4,likely,2025-05-20
+P3-JNJ,JNJ,Health care,2025-04-21,P3,rising,-8.9,12.4,likely,2025-05-20
+P4-JNJ,JNJ,Health care,2026-02-23,P4,falling,-1.0,-4.7,less likely,2026-03-24
+P3-JPM,JPM,Financials,2025-04-21,P3,rising,-8.9,12.4,likely,2025-05-20
+P4-JPM,JPM,Financials,2026-02-23,P4,falling,-1.0,-4.7,less likely,2026-03-24
+P1-LIN,LIN,Materials,2024-08-19,P1,flat,0.9,0.5,likely,2024-09-18
+P5-LIN,LIN,Materials,2026-04-06,P5,rising,-1.7,9.8,less likely,2026-05-05
+P3-META,META,Communication services,2025-04-21,P3,rising,-8.9,12.4,likely,2025-05-20
+P4-META,META,Communication services,2026-02-23,P4,falling,-1.0,-4.7,less likely,2026-03-24
+P1-NEE,NEE,Utilities,2024-08-19,P1,flat,0.9,0.5,likely,2024-09-18
+P4-NEE,NEE,Utilities,2026-02-23,P4,falling,-1.0,-4.7,less likely,2026-03-24
+P2-NVDA,NVDA,Information technology,2025-03-10,P2,falling,-6.7,-10.4,likely,2025-04-08
+P5-NVDA,NVDA,Information technology,2026-04-06,P5,rising,-1.7,9.8,less likely,2026-05-05
+P1-WMT,WMT,Consumer staples,2024-08-19,P1,flat,0.9,0.5,likely,2024-09-18
+P2-WMT,WMT,Consumer staples,2025-03-10,P2,falling,-6.7,-10.4,likely,2025-04-08
+P2-XOM,XOM,Energy,2025-03-10,P2,falling,-6.7,-10.4,likely,2025-04-08
+P5-XOM,XOM,Energy,2026-04-06,P5,rising,-1.7,9.8,less likely,2026-05-05
